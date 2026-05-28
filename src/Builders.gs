@@ -121,7 +121,7 @@ function buildBahan(ss) {
   setSheetFont(sh);
   sh.setTabColor(C.BLUE);
 
-  var headers = ["Kategori","Nama Bahan","Ukuran/Pack","Satuan","Harga Beli","Harga Per Piece"];
+  var headers = ["Kategori","Nama Bahan","Satuan","Ukuran/Pack","Harga Beli","Harga Per Piece"];
   var hRow = sh.getRange(1, 1, 1, headers.length);
   hRow.setValues([headers]);
   styleHeader(hRow, C.BLUE);
@@ -1052,7 +1052,7 @@ function _getNamedRangeDefs() {
     { name: "TRX_JmlTop", sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.JML_TOP, startRow: 3 },
     { name: "TRX_Varian", sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.VARIAN,  startRow: 3 },
     { name: "TRX_Topping",sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.TOPPING, startRow: 3 },
-    { name: "BAHAN_Lookup",sheet: SHEET.BAHAN,     col: COL.BAHAN.NAMA,       startRow: 2 },
+    { name: "BAHAN_Lookup",sheet: SHEET.BAHAN,     col: COL.BAHAN.NAMA,       startRow: 2, width: 5 },
     { name: "PEN_Tgl",    sheet: SHEET.PENGELUARAN,col: COL.PENGELUARAN.TGL,  startRow: 4 }
   ];
 }
@@ -1069,7 +1069,8 @@ function setupNamedRanges() {
     var sh = ss.getSheetByName(d.sheet);
     if (!sh) return;
     try {
-      var range = sh.getRange(d.startRow, COLx(d.col), 10000, 1);
+      var w = d.width || 1;
+      var range = sh.getRange(d.startRow, COLx(d.col), 10000, w);
       ss.setNamedRange(d.name, range);
     } catch(e) {
       Logger.log("⚠ Gagal setup named range " + d.name + ": " + e.message);
@@ -1094,7 +1095,8 @@ function refreshNamedRanges() {
     var numRows = Math.max(1, lastRow - d.startRow + 1);
     numRows = Math.min(numRows, 20000); // safety cap
     try {
-      var range = sh.getRange(d.startRow, COLx(d.col), numRows, 1);
+      var w = d.width || 1;
+      var range = sh.getRange(d.startRow, COLx(d.col), numRows, w);
       ss.setNamedRange(d.name, range);
     } catch(e) {
       Logger.log("⚠ Gagal refresh named range " + d.name + ": " + e.message);

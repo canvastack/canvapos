@@ -58,6 +58,8 @@ function onOpen() {
   cleanBackups();
   // Refresh dashboard
   refreshDashboard();
+  // Refresh named ranges (fix width BAHAN_Lookup etc.)
+  refreshNamedRanges();
 
   // Pasang date picker native & checkbox 📅 di kolom A Pengeluaran
   var C = getC();
