@@ -311,73 +311,56 @@ function showOnboardingWizard() {
     '<button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Lanjut →</button>' +
     '</div>' +
     '</div>' +
-    '<script>' +
-    'var step = 0;' +
-    'var steps = [' +
-    '  { title: "🔧 Setup System", text: "Memastikan semua sheet sudah siap.", check: "checkSetup" },' +
-    '  { title: "📦 Input Stok Awal", text: "Isi stok awal di sheet Stock.", check: "checkStock" },' +
-    '  { title: "💰 Initialize Kas", text: "Catat saldo awal PC & UB.", check: "checkKas" },' +
-    '  { title: "🎉 Siap Transaksi", text: "Panduan memulai transaksi pertama.", check: "checkReady" }' +
-    '];' +
-    '' +
-    'function onError(e) {' +
-    '  document.getElementById("statusCheck").innerHTML = ' +
-    '    "<div class=\"status err\">❌ Error: " + e.message + "</div>";' +
-    '}' +
-    '' +
-    'function showStatus(r) {' +
-    '  document.getElementById("statusCheck").innerHTML = r;' +
-    '}' +
-    '' +
-    'function runServerCheck(name) {' +
-    '  if (name === "checkSetup") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkSetup(); }' +
-    '  else if (name === "checkStock") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkStock(); }' +
-    '  else if (name === "checkKas") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkKas(); }' +
-    '  else if (name === "checkReady") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkReady(); }' +
-    '}' +
-    '' +
-    'runServerCheck("checkSetup");' +
-    '' +
-    'function nextStep() {' +
-    '  if (step < 3) {' +
-    '    step++;' +
-    '    updateStep();' +
-    '  } else {' +
-    '    google.script.host.close();' +
-    '  }' +
-    '}' +
-    '' +
-    'function prevStep() {' +
-    '  if (step > 0) { step--; updateStep(); }' +
-    '}' +
-    '' +
-    'function runSetup() {' +
-    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).withFailureHandler(onError).setupPOS();' +
-    '}' +
-    '' +
-    'function initKas() {' +
-    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).withFailureHandler(onError).initSaldoKas();' +
-    '}' +
-    '' +
-    'function updateStep() {' +
-    '  for (var i = 0; i < 4; i++) {' +
-    '    var el = document.getElementById("s" + i);' +
-    '    el.className = "step";' +
-    '    if (i < step) el.className = "step done";' +
-    '    if (i === step) el.className = "step active";' +
-    '  }' +
-    '  var s = steps[step];' +
-    '  document.getElementById("stepContent").innerHTML = ' +
-    '    "<h3>" + s.title + "</h3><p>" + s.text + "</p><div id=\"statusCheck\"></div>";' +
-    '  var btn = document.getElementById("nextBtn");' +
-    '  if (step === 3) { btn.textContent = "✅ Selesai"; btn.className = "btn btn-success"; }' +
-    '  else { btn.textContent = "Lanjut →"; btn.className = "btn btn-primary"; }' +
-    '  document.getElementById("stepContent").innerHTML += ' +
-    '    "<div class=\"btn-bar\" style=\"margin-top:8px\">" +' +
-    '    (step > 0 ? "<button class=\"btn btn-outline\" onclick=\"prevStep()\">← Kembali</button>" : "<div></div>") +' +
-    '    "</div>";' +
-    '  runServerCheck(s.check);' +
-    '}' +
+    '<script>\n' +
+    'var step = 0;\n' +
+    'var steps = [\n' +
+    '  { title: "🔧 Setup System", text: "Memastikan semua sheet sudah siap.", check: "checkSetup" },\n' +
+    '  { title: "📦 Input Stok Awal", text: "Isi stok awal di sheet Stock.", check: "checkStock" },\n' +
+    '  { title: "💰 Initialize Kas", text: "Catat saldo awal PC & UB.", check: "checkKas" },\n' +
+    '  { title: "🎉 Siap Transaksi", text: "Panduan memulai transaksi pertama.", check: "checkReady" }\n' +
+    '];\n' +
+    '\n' +
+    'function ok(r) { document.getElementById("statusCheck").innerHTML = r; }\n' +
+    'function fail(e) { ok("<div class=\\"status err\\">" + e.message + "</div>"); }\n' +
+    '\n' +
+    'google.script.run.withSuccessHandler(ok).withFailureHandler(fail).checkSetup();\n' +
+    '\n' +
+    'function nextStep() {\n' +
+    '  if (step < 3) { step++; updateStep(); }\n' +
+    '  else { google.script.host.close(); }\n' +
+    '}\n' +
+    '\n' +
+    'function prevStep() {\n' +
+    '  if (step > 0) { step--; updateStep(); }\n' +
+    '}\n' +
+    '\n' +
+    'function runSetup() {\n' +
+    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).withFailureHandler(fail).setupPOS();\n' +
+    '}\n' +
+    '\n' +
+    'function initKas() {\n' +
+    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).withFailureHandler(fail).initSaldoKas();\n' +
+    '}\n' +
+    '\n' +
+    'function updateStep() {\n' +
+    '  for (var i = 0; i < 4; i++) {\n' +
+    '    var el = document.getElementById("s" + i);\n' +
+    '    el.className = "step";\n' +
+    '    if (i < step) el.className = "step done";\n' +
+    '    if (i === step) el.className = "step active";\n' +
+    '  }\n' +
+    '  var s = steps[step];\n' +
+    '  document.getElementById("stepContent").innerHTML =\n' +
+    '    "<h3>" + s.title + "</h3><p>" + s.text + "</p><div id=\\"statusCheck\\"></div>";\n' +
+    '  var btn = document.getElementById("nextBtn");\n' +
+    '  if (step === 3) { btn.textContent = "✅ Selesai"; btn.className = "btn btn-success"; }\n' +
+    '  else { btn.textContent = "Lanjut →"; btn.className = "btn btn-primary"; }\n' +
+    '  document.getElementById("stepContent").innerHTML +=\n' +
+    '    "<div class=\\"btn-bar\\" style=\\"margin-top:8px\\">" +\n' +
+    '    (step > 0 ? "<button class=\\"btn btn-outline\\" onclick=\\"prevStep()\\">← Kembali</button>" : "<div></div>") +\n' +
+    '    "</div>";\n' +
+    '  google.script.run.withSuccessHandler(ok).withFailureHandler(fail)[s.check]();\n' +
+    '}\n' +
     '</script>'
   ).setWidth(480).setHeight(380);
   SpreadsheetApp.getUi().showModalDialog(html, "🚀 Onboarding Wizard");

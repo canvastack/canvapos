@@ -63,7 +63,7 @@ function onOpen() {
   var shP = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Pengeluaran");
   if (shP) {
     shP.getRange("A4:A203").setDataValidation(
-      SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true)
+      SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false)
         .setHelpText("Klik icon 📅 untuk pilih tanggal").build()
     );
   }
@@ -210,6 +210,10 @@ function onSelectionChange(e) {
   // Pengeluaran: kolom Tanggal (A), baris data (4+), cell kosong → auto isi tanggal hari ini
   if (shName === "Pengeluaran" && col === 1 && row >= 4 && e.range.getValue() === "") {
     e.range.setValue(new Date()).setNumberFormat("DD/MM/YYYY");
+    e.range.setDataValidation(
+      SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false)
+        .setHelpText("Klik ikon 📅 atau double-click untuk pilih tanggal").build()
+    );
     return;
   }
   });

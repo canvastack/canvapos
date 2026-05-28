@@ -64,10 +64,10 @@ function buildPengeluaran(ss) {
 
   // ── Data kosong — isi manual ────────────────────────────────────────
 
-  // ── Date picker validation (setelah sample data biar ga error) ──────
+  // ── Date picker validation ────────────────────────────────────────
   var dateRule = SpreadsheetApp.newDataValidation()
     .requireDate()
-    .setAllowInvalid(true) // izinin data existing
+    .setAllowInvalid(false)
     .setHelpText("Klik untuk pilih tanggal dari kalender")
     .build();
   sh.getRange("A4:A203").setDataValidation(dateRule);
