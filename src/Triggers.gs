@@ -58,6 +58,15 @@ function onOpen() {
   cleanBackups();
   // Refresh dashboard
   refreshDashboard();
+
+  // Pasang date picker native di kolom A Pengeluaran
+  var shP = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Pengeluaran");
+  if (shP) {
+    shP.getRange("A4:A203").setDataValidation(
+      SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true)
+        .setHelpText("Klik icon 📅 untuk pilih tanggal").build()
+    );
+  }
 }
 
 // ── onEdit utama: routing ke handler yang sesuai ─────────────────────────
