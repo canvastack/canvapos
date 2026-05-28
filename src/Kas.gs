@@ -198,7 +198,7 @@ function initSaldoKas() {
     }
   }
   if (sudahAdaPC && sudahAdaUB) {
-    SpreadsheetApp.getUi().alert("ℹ Saldo awal hari " + today + " sudah dicatat. Lewati.");
+    notify("Saldo awal hari " + today + " sudah dicatat. Lewati.");
     return;
   }
   
@@ -212,5 +212,5 @@ function initSaldoKas() {
     msgParts.push("UB: Rp 100.000");
   }
   auditLog("Init Saldo Kas", msgParts.join(", "));
-  SpreadsheetApp.getUi().alert("✅ Saldo awal dicatat:\n" + msgParts.join("\n"));
+  notify("✅ Saldo awal dicatat: " + msgParts.join(", "));
 }

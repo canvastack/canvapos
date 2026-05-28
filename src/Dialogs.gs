@@ -320,9 +320,23 @@ function showOnboardingWizard() {
     '  { title: "🎉 Siap Transaksi", text: "Panduan memulai transaksi pertama.", check: "checkReady" }' +
     '];' +
     '' +
-    'google.script.run.withSuccessHandler(function(r) {' +
+    'function onError(e) {' +
+    '  document.getElementById("statusCheck").innerHTML = ' +
+    '    "<div class=\"status err\">❌ Error: " + e.message + "</div>";' +
+    '}' +
+    '' +
+    'function showStatus(r) {' +
     '  document.getElementById("statusCheck").innerHTML = r;' +
-    '}).checkSetup();' +
+    '}' +
+    '' +
+    'var serverChecks = {' +
+    '  checkSetup: function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkSetup(); },' +
+    '  checkStock: function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkStock(); },' +
+    '  checkKas:   function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkKas(); },' +
+    '  checkReady: function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkReady(); }' +
+    '};' +
+    '' +
+    'serverChecks.checkSetup();' +
     '' +
     'function nextStep() {' +
     '  if (step < 3) {' +
@@ -338,11 +352,11 @@ function showOnboardingWizard() {
     '}' +
     '' +
     'function runSetup() {' +
-    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).setupPOS();' +
+    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).withFailureHandler(onError).setupPOS();' +
     '}' +
     '' +
     'function initKas() {' +
-    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).initSaldoKas();' +
+    '  google.script.run.withSuccessHandler(function(){ updateStep(); }).withFailureHandler(onError).initSaldoKas();' +
     '}' +
     '' +
     'function updateStep() {' +
@@ -362,9 +376,7 @@ function showOnboardingWizard() {
     '    "<div class=\"btn-bar\" style=\"margin-top:8px\">" +' +
     '    (step > 0 ? "<button class=\"btn btn-outline\" onclick=\"prevStep()\">← Kembali</button>" : "<div></div>") +' +
     '    "</div>";' +
-    '  google.script.run.withSuccessHandler(function(r) {' +
-    '    document.getElementById("statusCheck").innerHTML = r;' +
-    '  })[s.check]();' +
+    '  if (serverChecks[s.check]) serverChecks[s.check]();' +
     '}' +
     '</script>'
   ).setWidth(480).setHeight(380);
@@ -376,7 +388,7 @@ function showOnboardingWizard() {
  * @return {string} HTML status
  */
 function checkSetup() {
-  var sheets = ["POS","Stock","Transaksi","Pendapatan","Pengeluaran","Bahan","Resep","Kas"];
+  var sheets = ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Audit"];
   var missing = [];
   sheets.forEach(function(name) {
     if (!SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name)) missing.push(name);
@@ -415,15 +427,25 @@ function checkStock() {
  * Step 3: Cek Kas.
  * @return {string} HTML status
  */
+function _fmtRupiah(n) {
+  var s = String(Math.round(n));
+  var r = '';
+  for (var i = s.length - 1, j = 0; i >= 0; i--, j++) {
+    if (j > 0 && j % 3 === 0) r = '.' + r;
+    r = s[i] + r;
+  }
+  return r;
+}
+
 function checkKas() {
   var saldoPC = getSaldoPC();
   var saldoUB = getSaldoUB();
   var html = '';
   html += (saldoPC > 0)
-    ? '<div class="status ok">💰 PC: Rp ' + saldoPC.toLocaleString("id-ID") + '</div>'
+    ? '<div class="status ok">💰 PC: Rp ' + _fmtRupiah(saldoPC) + '</div>'
     : '<div class="status warn">💰 PC: Belum di-set. Klik "Init Saldo Awal PC & UB"</div>';
   html += (saldoUB > 0)
-    ? '<div class="status ok">🛒 UB: Rp ' + saldoUB.toLocaleString("id-ID") + '</div>'
+    ? '<div class="status ok">🛒 UB: Rp ' + _fmtRupiah(saldoUB) + '</div>'
     : '<div class="status warn">🛒 UB: Belum di-set. Klik "Init Saldo Awal PC & UB"</div>';
   if (saldoPC <= 0 || saldoUB <= 0) {
     html += '<button class="btn btn-primary" onclick="initKas()">💰 Init Saldo Sekarang</button>';
