@@ -927,6 +927,116 @@ function setupBackupTrigger(hour) {
   auditLog("Setup Backup Trigger", "Daily at " + hour + ":00");
 }
 
+/**
+ * Tampilkan daftar semua file backup yang bisa dibuka.
+ * Setiap baris menampilkan nama file, tanggal, dan link untuk membuka.
+ */
+function listBackups() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var parentFolder = DriveApp.getFileById(ss.getId()).getParents();
+  if (!parentFolder.hasNext()) {
+    SpreadsheetApp.getUi().alert("❌ Folder tidak ditemukan.");
+    return;
+  }
+
+  var folder = parentFolder.next();
+  var namePrefix = ss.getName() + " — Backup ";
+  var files = folder.getFiles();
+  var html = '<style>' +
+    'body{font-family:monospace;padding:16px;color:#333}' +
+    'h3{margin:0 0 12px;color:#2C3E50}' +
+    'table{width:100%;border-collapse:collapse;font-size:13px}' +
+    'th{text-align:left;padding:6px 8px;border-bottom:2px solid #ddd;color:#666}' +
+    'td{padding:6px 8px;border-bottom:1px solid #eee}' +
+    'a{color:#2980b9;text-decoration:none}' +
+    'a:hover{text-decoration:underline}' +
+    '.empty{padding:20px;text-align:center;color:#999}' +
+    '.btn{margin-top:12px;padding:8px 16px;background:#667eea;color:#fff;border:none;border-radius:4px;cursor:pointer}' +
+    '</style>' +
+    '<h3>📂 Daftar Backup</h3>';
+
+  var count = 0;
+  html += '<table><tr><th>No</th><th>Nama File</th><th>Dibuat</th></tr>';
+  while (files.hasNext()) {
+    var file = files.next();
+    if (file.getName().indexOf(namePrefix) === 0) {
+      count++;
+      var url = file.getUrl();
+      var created = Utilities.formatDate(file.getDateCreated(), "Asia/Jakarta", "dd/MM/yyyy HH:mm");
+      html += '<tr>' +
+        '<td>' + count + '</td>' +
+        '<td><a href="' + url + '" target="_blank">' + file.getName().replace(namePrefix, '') + '</a></td>' +
+        '<td>' + created + '</td>' +
+        '</tr>';
+    }
+  }
+  html += '</table>';
+
+  if (count === 0) {
+    html += '<div class="empty">Belum ada backup. Klik menu <b>📀 Backup Sekarang</b> untuk membuat.</div>';
+  } else {
+    html += '<p style="font-size:12px;color:#666;margin-top:8px">Total: ' + count + ' backup</p>';
+  }
+
+  html += '<button class="btn" onclick="google.script.host.close()">Tutup</button>';
+
+  var output = HtmlService.createHtmlOutput(html).setWidth(600).setHeight(400);
+  SpreadsheetApp.getUi().showModalDialog(output, "📂 Daftar Backup CanvaPOS");
+}
+
+/**
+ * Restore dari backup: buka file backup di tab baru.
+ */
+function restoreBackup() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var parentFolder = DriveApp.getFileById(ss.getId()).getParents();
+  if (!parentFolder.hasNext()) {
+    SpreadsheetApp.getUi().alert("❌ Folder tidak ditemukan.");
+    return;
+  }
+
+  var folder = parentFolder.next();
+  var namePrefix = ss.getName() + " — Backup ";
+  var files = folder.getFiles();
+  var backups = [];
+  while (files.hasNext()) {
+    var file = files.next();
+    if (file.getName().indexOf(namePrefix) === 0) {
+      backups.push(file);
+    }
+  }
+
+  if (backups.length === 0) {
+    SpreadsheetApp.getUi().alert("❌ Belum ada backup.");
+    return;
+  }
+
+  // Urutkan dari terbaru
+  backups.sort(function(a, b) { return b.getDateCreated() - a.getDateCreated(); });
+
+  // Buka backup terbaru
+  var latest = backups[0];
+  var url = latest.getUrl();
+  var html = '<style>' +
+    'body{font-family:sans-serif;padding:20px;text-align:center;color:#333}' +
+    'h3{color:#2C3E50}' +
+    'p{font-size:14px;line-height:1.6}' +
+    '.btn{padding:10px 24px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;margin:4px}' +
+    '.btn-primary{background:#2980b9;color:#fff}' +
+    '.btn-secondary{background:#95a5a6;color:#fff}' +
+    '</style>' +
+    '<h3>📀 Restore dari Backup</h3>' +
+    '<p>Backup terbaru:<br><b>' + latest.getName() + '</b></p>' +
+    '<p style="font-size:13px;color:#666">Dibuat: ' +
+    Utilities.formatDate(latest.getDateCreated(), "Asia/Jakarta", "dd/MM/yyyy HH:mm") + '</p>' +
+    '<p><button class="btn btn-primary" onclick="window.open(\'' + url + '\',\'_blank\')">📂 Buka Backup</button></p>' +
+    '<p style="font-size:12px;color:#999">Atau buka menu <b>📂 Lihat Backup</b> untuk memilih backup lain.</p>' +
+    '<button class="btn btn-secondary" onclick="google.script.host.close()">Tutup</button>';
+
+  var output = HtmlService.createHtmlOutput(html).setWidth(450).setHeight(280);
+  SpreadsheetApp.getUi().showModalDialog(output, "📀 Restore CanvaPOS");
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // NAMED RANGES — P3.4
 // ═══════════════════════════════════════════════════════════════════════════

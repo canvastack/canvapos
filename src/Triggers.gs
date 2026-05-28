@@ -40,6 +40,8 @@ function onOpen() {
     .addSeparator()
     .addItem("📀 Backup Sekarang", "backupSpreadsheet")
     .addItem("⏰ Atur Backup Otomatis", "setupBackupTrigger")
+    .addItem("📂 Lihat Backup", "listBackups")
+    .addItem("♻ Restore dari Backup", "restoreBackup")
     .addSeparator()
     .addItem("🚀 Onboarding Wizard", "showOnboardingWizard")
     .addSeparator()
