@@ -260,10 +260,14 @@ function withLock(timeout, fn) {
   try {
     lock.waitLock(timeout || 10000);
     if (isDebug()) Logger.log("🔒 Lock acquired (" + (timeout || 10000) + "ms)");
-    return fn();
   } catch (e) {
     if (isDebug()) Logger.log("🔒 Lock TIMEOUT (" + (timeout || 10000) + "ms)");
-    throw new Error("Lock timeout (" + (timeout || 10000) + "ms): " + e.message);
+    throw new Error("Lock timeout (" + (timeout || 10000) + "ms)");
+  }
+  try {
+    return fn();
+  } catch (e) {
+    throw new Error("Lock execution error: " + e.message);
   } finally {
     lock.releaseLock();
     if (isDebug()) Logger.log("🔒 Lock released");

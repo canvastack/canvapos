@@ -196,9 +196,9 @@ function onSelectionChange(e) {
   var row = e.range.getRow();
   var col = e.range.getColumn();
 
-  // Pengeluaran: kolom Tanggal (A), baris data (4+), cell kosong → auto date picker
+  // Pengeluaran: kolom Tanggal (A), baris data (4+), cell kosong → auto isi tanggal hari ini
   if (shName === "Pengeluaran" && col === 1 && row >= 4 && e.range.getValue() === "") {
-    showDatePickerForRowCol(row, col, shName);
+    e.range.setValue(new Date()).setNumberFormat("DD/MM/YYYY");
     return;
   }
   });

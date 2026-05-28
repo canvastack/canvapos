@@ -1,6 +1,6 @@
 # CanvaPOS
 
-**Point-of-Sale System untuk Google Sheets** — Dirancang untuk usaha minuman skala kecil (Pop Ice blender, kopi tubruk, es teh) dengan manajemen stok berbasis Bill of Materials (BOM). **Modular, 12 file, 90% complete.**
+**Point-of-Sale System untuk Google Sheets** — Dirancang untuk usaha minuman skala kecil (Pop Ice blender, kopi tubruk, es teh) dengan manajemen stok berbasis Bill of Materials (BOM). **13 file modular, deployed ke production.**
 
 ## Fitur
 
@@ -53,11 +53,11 @@ clasp open
 
 > Jika `setupPOS()` timeout, jalankan fungsi satu per satu (lihat menu POS → Setup Partial).
 
-## Struktur Sheet
+## Struktur Sheet (10 Sheets)
 
 | Sheet | Fungsi |
 |---|---|
-| **Panduan** | Manual pengguna |
+| **Panduan** | Manual pengguna + Dashboard sistem |
 | **POS** | Input pesanan utama |
 | **Stock** | Monitoring stok bahan + restock alert |
 | **Transaksi** | Log history transaksi |
@@ -66,33 +66,53 @@ clasp open
 | **Kas** | Tracking Petty Cash & Uang Belanja |
 | **Bahan** | Master data bahan baku (harga, ukuran) |
 | **Resep** | Bill of Materials — komposisi setiap produk |
+| **Audit** | Hidden log aktivitas (90-day retention) |
 
 ## Menu `🧋 POS`
 
 | Menu | Fungsi |
-|---|---|
+|---|---|---|
 | 💾 Simpan Transaksi | Simpan pesanan ke log + update stok |
 | ➕ Add Row | Tambah baris order baru |
-| 🍬 Pilih Topping | Dialog pilihan topping untuk baris aktif |
+| 🍬 Pilih Topping (baris aktif) | Dialog checklist topping untuk baris aktif |
 | 🗑 Clear POS | Reset semua baris order |
+| ♻ Safe Clear (backup dulu) | Backup data lalu clear POS |
+| ↩ Restore POS dari Backup | Pulihkan data dari backup terakhir |
 | 💸 Simpan & Sync Stok | Simpan pengeluaran → update stok |
-| 💸 Sinkronisasi Dropdown | Refresh dropdown di sheet Pengeluaran |
-| 🔄 Refresh Laporan | Update laporan pendapatan |
-| 🗑 Hapus Baris Aktif | Hapus baris order tertentu |
+| 💸 Sinkronisasi Dropdown Pengeluaran | Refresh dropdown di sheet Pengeluaran |
+| 🔄 Refresh Laporan Pendapatan | Update laporan pendapatan |
+| 📊 Refresh Dashboard | Update dashboard di Panduan |
+| 🗑 Hapus Baris Aktif (POS) | Hapus baris order tertentu |
 | ➕ Tambah Resep / BOM | Dialog tambah resep baru |
-| 💰 Top Up PC / 🛒 Top Up UB | Top up kas otomatis |
-| 📅 Init Saldo Awal | Set saldo awal PC & UB harian |
-| 📅 Pilih Tanggal | Date picker untuk Pengeluaran |
-| 🔧 Setup Ulang | Reset semua sheet |
+| 💰 Top Up PC ke Rp 100.000 | Top up PC (closing harian) |
+| 🛒 Top Up UB (jika < Rp 10.000) | Top up UB otomatis |
+| 📅 Init Saldo Awal PC & UB | Set saldo awal harian |
+| 📅 Pilih Tanggal (cell aktif) | Date picker untuk cell aktif |
+| 🔧 Setup Ulang (reset semua) | Reset semua sheet |
+| 🔒 Proteksi Semua Sheet | Proteksi formula & header |
+| 🔓 Unprotect Semua Sheet | Hapus semua proteksi |
+| 📀 Backup Sekarang | Backup spreadsheet + timestamp |
+| ⏰ Atur Backup Otomatis | Daily backup trigger |
+| 🚀 Onboarding Wizard | Panduan setup 4 langkah |
+| 🏷️ Refresh Named Ranges | Update ukuran named range |
+| 🌐 Set Environment… | Pilih production/staging/development |
 | ⚡ Install Auto-Fix Trigger | Pasang trigger onEdit |
 
 ## Teknologi
 
 - **Bahasa:** JavaScript (Google Apps Script, V8)
 - **UI:** Google Sheets cells + HtmlService (HTML/CSS/JS dialogs)
-- **Storage:** Spreadsheet rows + PropertiesService
+- **Storage:** Spreadsheet rows + PropertiesService + CacheService
 - **Trigger:** `onEdit`, `onSelectionChange`, `onOpen`
+- **Concurrency:** LockService wrapper (`withLock()`) — aman multi-user
+- **Deploy:** clasp push — 13 file modular ke GAS project
 - **Harga:** Rp 5.000/cup, Rp 1.000/jenis topping
+
+## Script ID
+
+```
+18Eld0ZbczRsWqIxXYhK3y0DHZm2FKUO9jQ8Dvc-UI9DfHKAmItiElags
+```
 
 ## Lisensi
 

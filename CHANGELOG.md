@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.0.1] — 2026-05-29
+
+### Fixed
+
+- **`confirmAction()` crash in non-UI context** — wrapped `SpreadsheetApp.getUi()` in try-catch. Fixes `setupPOS()` failing when run from Apps Script editor.
+- **`setupPOS()` missing Audit sheet cleanup** — added "Audit" to sheet deletion list before rebuild. Fixes "sheet already exists" error on re-run.
+- **`auditLog()` undefined `C` variable** — added `var C = getC()` inside function. Fixes LockService error masking the real issue.
+- **`withLock()` misleading error messages** — separated lock timeout errors from function execution errors. "Lock timeout" vs "Lock execution error".
+- **`onSelectionChange()` permission denied** — replaced `showDatePickerForRowCol()` with auto-fill today's date. Simple triggers cannot call `showModalDialog()`.
+- **Missing `oauthScopes` in manifest** — added `script.container.ui`, `spreadsheets`, `drive.file`, `userinfo.email` scopes to `appsscript.json`.
+
+### Added
+
+- **Deploy via clasp** — production deployment to Script ID `18Eld0ZbczRsWqIxXYhK3y0DHZm2FKUO9jQ8Dvc-UI9DfHKAmItiElags`.
+
+### Documentation
+
+- **README.md** — updated sheet count (10 sheets incl. Audit), full 26-item menu table, Script ID, deployment info
+- **AGENTS.md** — added Step 19 deployment session, updated progress
+
 ## [1.0.0] — 2026-05-28
 
 ### Added

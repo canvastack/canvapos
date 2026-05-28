@@ -51,10 +51,14 @@ var SHEET = {
  * @return {boolean} True jika user klik Yes
  */
 function confirmAction(message, title) {
-  if (getEnv() === "development") return true; // skip konfirmasi di dev
-  var ui = SpreadsheetApp.getUi();
-  var result = ui.alert(title || "Konfirmasi", message, ui.ButtonSet.YES_NO);
-  return result === ui.Button.YES;
+  if (getEnv() === "development") return true;
+  try {
+    var ui = SpreadsheetApp.getUi();
+    var result = ui.alert(title || "Konfirmasi", message, ui.ButtonSet.YES_NO);
+    return result === ui.Button.YES;
+  } catch(e) {
+    return true;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

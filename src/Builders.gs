@@ -23,7 +23,7 @@ function setupPOS(env) {
   deleteSheetIfExists(ss, tempName);
   ss.insertSheet(tempName);
 
-  ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Sheet1"].forEach(function(n) {
+  ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Audit","Sheet1"].forEach(function(n) {
     deleteSheetIfExists(ss, n);
   });
 
@@ -590,6 +590,7 @@ function buildAudit(ss) {
  */
 function auditLog(action, detail) {
   if (isDebug()) Logger.log("📋 AUDIT [" + action + "] " + detail);
+  var C = getC();
   withLock(5000, function() {
     var sh = getSheet(SHEET.AUDIT);
     if (!sh) return;
