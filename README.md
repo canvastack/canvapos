@@ -70,33 +70,33 @@ clasp open
 
 ## Menu `🧋 POS`
 
-| Menu | Fungsi |
-|---|---|---|
-| 💾 Simpan Transaksi | Simpan pesanan ke log + update stok |
-| ➕ Add Row | Tambah baris order baru |
-| 🍬 Pilih Topping (baris aktif) | Dialog checklist topping untuk baris aktif |
-| 🗑 Clear POS | Reset semua baris order |
-| ♻ Safe Clear (backup dulu) | Backup data lalu clear POS |
-| ↩ Restore POS dari Backup | Pulihkan data dari backup terakhir |
-| 💸 Simpan & Sync Stok | Simpan pengeluaran → update stok |
-| 💸 Sinkronisasi Dropdown Pengeluaran | Refresh dropdown di sheet Pengeluaran |
-| 🔄 Refresh Laporan Pendapatan | Update laporan pendapatan |
-| 📊 Refresh Dashboard | Update dashboard di Panduan |
-| 🗑 Hapus Baris Aktif (POS) | Hapus baris order tertentu |
-| ➕ Tambah Resep / BOM | Dialog tambah resep baru |
-| 💰 Top Up PC ke Rp 100.000 | Top up PC (closing harian) |
-| 🛒 Top Up UB (jika < Rp 10.000) | Top up UB otomatis |
-| 📅 Init Saldo Awal PC & UB | Set saldo awal harian |
-| 📅 Pilih Tanggal (cell aktif) | Date picker untuk cell aktif |
-| 🔧 Setup Ulang (reset semua) | Reset semua sheet |
-| 🔒 Proteksi Semua Sheet | Proteksi formula & header |
-| 🔓 Unprotect Semua Sheet | Hapus semua proteksi |
-| 📀 Backup Sekarang | Backup spreadsheet + timestamp |
-| ⏰ Atur Backup Otomatis | Daily backup trigger |
-| 🚀 Onboarding Wizard | Panduan setup 4 langkah |
-| 🏷️ Refresh Named Ranges | Update ukuran named range |
-| 🌐 Set Environment… | Pilih production/staging/development |
-| ⚡ Install Auto-Fix Trigger | Pasang trigger onEdit |
+| Menu | Fungsi |   
+|---|---|   
+| 💾 Simpan Transaksi | Simpan pesanan ke log + update stok |   
+| ➕ Add Row | Tambah baris order baru |   
+| 🍬 Pilih Topping (baris aktif) | Dialog checklist topping untuk baris aktif |   
+| 🗑 Clear POS | Reset semua baris order |   
+| ♻ Safe Clear (backup dulu) | Backup data lalu clear POS |   
+| ↩ Restore POS dari Backup | Pulihkan data dari backup terakhir |   
+| 💸 Simpan & Sync Stok | Simpan pengeluaran → update stok |   
+| 💸 Sinkronisasi Dropdown Pengeluaran | Refresh dropdown di sheet Pengeluaran |   
+| 🔄 Refresh Laporan Pendapatan | Update laporan pendapatan |   
+| 📊 Refresh Dashboard | Update dashboard di Panduan |   
+| 🗑 Hapus Baris Aktif (POS) | Hapus baris order tertentu |   
+| ➕ Tambah Resep / BOM | Dialog tambah resep baru |   
+| 💰 Top Up PC ke Rp 100.000 | Top up PC (closing harian) |   
+| 🛒 Top Up UB (jika < Rp 10.000) | Top up UB otomatis |   
+| 📅 Init Saldo Awal PC & UB | Set saldo awal harian |   
+| 📅 Pilih Tanggal (cell aktif) | Date picker untuk cell aktif |   
+| 🔧 Setup Ulang (reset semua) | Reset semua sheet |   
+| 🔒 Proteksi Semua Sheet | Proteksi formula & header |   
+| 🔓 Unprotect Semua Sheet | Hapus semua proteksi |   
+| 📀 Backup Sekarang | Backup spreadsheet + timestamp |   
+| ⏰ Atur Backup Otomatis | Daily backup trigger |   
+| 🚀 Onboarding Wizard | Panduan setup 4 langkah |   
+| 🏷️ Refresh Named Ranges | Update ukuran named range |   
+| 🌐 Set Environment… | Pilih production/staging/development |   
+| ⚡ Install Auto-Fix Trigger | Pasang trigger onEdit |   
 
 ## Teknologi
 
@@ -116,4 +116,4 @@ clasp open
 
 ## Lisensi
 
-Hak cipta CanvaStack.
+Hak cipta CanvaStack.ID
