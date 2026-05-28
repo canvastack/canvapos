@@ -12,3 +12,5 @@ ROADMAP.md
 
 # Clasp (contains script ID)
 .clasp.json
+
+node_modules/
