@@ -1,6 +1,6 @@
 # CanvaPOS
 
-**Point-of-Sale System untuk Google Sheets** — Dirancang untuk usaha minuman skala kecil (Pop Ice blender, kopi tubruk, es teh) dengan manajemen stok berbasis Bill of Materials (BOM).
+**Point-of-Sale System untuk Google Sheets** — Dirancang untuk usaha minuman skala kecil (Pop Ice blender, kopi tubruk, es teh) dengan manajemen stok berbasis Bill of Materials (BOM). **Modular, 12 file, 90% complete.**
 
 ## Fitur
 
@@ -16,22 +16,42 @@
 
 ## Persyaratan
 
-- Google Sheets
+- [Node.js](https://nodejs.org) + [clasp](https://github.com/google/clasp): `npm install -g @google/clasp`
 - Google Apps Script (V8 runtime)
 - Font **Nunito** (opsional, untuk tampilan optimal)
 
-## Instalasi
+## Instalasi (clasp — modular)
 
-1. Buka Google Sheets baru
-2. Klik **Extensions → Apps Script**
-3. Hapus kode default, salin seluruh isi `CanvaPOS.gs` ke editor
-4. Simpan (Ctrl+S) — beri nama project "CanvaPOS"
-5. Klik **Run → setupPOS()** — izinkan permissions yang diminta
-6. Kembali ke sheet, refresh halaman
-7. Menu `🧋 POS` akan muncul di toolbar
+```bash
+# 1. Clone repo
+git clone https://github.com/canvastack/canvapos.git
+cd canvapos
 
-> Jika `setupPOS()` timeout, jalankan fungsi satu per satu:
-> `setup_1_Bahan()` → `setup_2_Resep()` → `setup_3_Transaksi()` → `setup_4_Stock()` → `setup_5_Pengeluaran()` → `setup_5b_Kas()` → `setup_5c_Pendapatan()` → `setup_6_POS()` → `setup_7_Panduan()` → `setup_8_Reorder()`
+# 2. Login clasp
+clasp login
+
+# 3. Buat GAS project baru (atau pakai existing)
+#    Opsi A: Buat baru dari CLI
+clasp create --type sheets --title "CanvaPOS"
+#    Opsi B: Pakai project existing
+#    Buka script editor → Settings → Script ID → copas ke .clasp.json
+
+# 4. Push semua file ke GAS
+clasp push
+
+# 5. Buka di browser
+clasp open
+
+# 6. Di Apps Script editor, jalankan setupPOS()
+```
+
+### Manual (copy-paste — alternatif)
+
+1. Buka Google Sheets baru → **Extensions → Apps Script**
+2. Copy isi setiap file dari `src/` ke editor (buat file baru per modul)
+3. Simpan, jalankan `setupPOS()`
+
+> Jika `setupPOS()` timeout, jalankan fungsi satu per satu (lihat menu POS → Setup Partial).
 
 ## Struktur Sheet
 

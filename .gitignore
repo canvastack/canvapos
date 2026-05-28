@@ -1,0 +1,14 @@
+# AGENTS.md
+AGENTS.md
+
+# Request / docs
+Request.md
+session-ses_*.md
+ROADMAP.md
+
+# Backup files
+*.bak
+*AUDIT_ETR*.md
+
+# Clasp (contains script ID)
+.clasp.json
