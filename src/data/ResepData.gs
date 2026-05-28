@@ -13,7 +13,7 @@ function generateBOMData() {
     "Es Doger","Es Teler"
   ];
   var POP_ICE_TEMPLATE = [
-    ["Gula Pasir",20,"Gram"],["Susu SKM",30,"Gram"],
+    ["Gula Pasir",20,"Gram"],["Susu SKM",5,"Gram"],
     ["Air (Galon)",0.15,"Liter"],["Es Batu Kristal",0.2,"Kg"],
     ["Cup Plastik 18oz",1,"Piece"],["Tutup Cup Plastik",1,"Piece"],
     ["Sedotan Biasa",1,"Piece"]
@@ -30,12 +30,12 @@ function generateBOMData() {
     items.forEach(function(t) { data.push([menuName, t[0], t[1], t[2]]); });
   }
   addBOM("Kopi Tubruk Robusta", [
-    ["Biji Kopi Robusta",15,"Gram"],["Gula Pasir",15,"Gram"],
+    ["Biji Kopi Robusta",15,"Gram"],["Gula Pasir",10,"Gram"],
     ["Air (Galon)",0.2,"Liter"],["Paper Cup 8oz",1,"Piece"],
     ["Tutup Paper Cup",1,"Piece"],["Sedotan Biasa",1,"Piece"]
   ]);
   addBOM("Kopi Tubruk Arabika", [
-    ["Biji Kopi Arabika",15,"Gram"],["Gula Pasir",15,"Gram"],
+    ["Biji Kopi Arabika",15,"Gram"],["Gula Pasir",10,"Gram"],
     ["Air (Galon)",0.2,"Liter"],["Paper Cup 8oz",1,"Piece"],
     ["Tutup Paper Cup",1,"Piece"],["Sedotan Biasa",1,"Piece"]
   ]);

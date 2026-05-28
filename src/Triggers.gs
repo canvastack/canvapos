@@ -27,6 +27,7 @@ function onOpen() {
     .addItem("🗑 Hapus Baris Aktif (POS)", "deleteRowPOS")
     .addSeparator()
     .addItem("➕ Tambah Resep / BOM", "showTambahResepDialog")
+    .addItem("🔄 Sync Data Resep", "syncResepData")
     .addSeparator()
     .addSeparator()
     .addItem("💰 Top Up PC ke Rp 100.000", "topUpPC")

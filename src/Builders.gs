@@ -191,6 +191,23 @@ function buildResep(ss) {
   sh.setFrozenRows(1);
 }
 
+/**
+ * Sinkronisasi ulang data BOM dari ResepData.gs ke sheet Resep (kolom A-D).
+ * Formula kolom E-F tetap aman. Panggil setelah update data BOM.
+ */
+function syncResepData() {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET.RESEP);
+  if (!sh) return;
+  var data = generateBOMData();
+  if (!data || !data.length) return;
+  sh.getRange(2, 1, data.length, data[0].length).setValues(data);
+  // Hapus sisa baris lama (jika data baru lebih pendek)
+  var lastRow = sh.getLastRow();
+  if (lastRow > data.length + 1) {
+    sh.getRange(data.length + 2, 1, lastRow - data.length - 1, 6).clearContent();
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SHEET — STOCK
 // ═══════════════════════════════════════════════════════════════════════════
