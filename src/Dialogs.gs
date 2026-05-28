@@ -329,14 +329,14 @@ function showOnboardingWizard() {
     '  document.getElementById("statusCheck").innerHTML = r;' +
     '}' +
     '' +
-    'var serverChecks = {' +
-    '  checkSetup: function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkSetup(); },' +
-    '  checkStock: function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkStock(); },' +
-    '  checkKas:   function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkKas(); },' +
-    '  checkReady: function(){ google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkReady(); }' +
-    '};' +
+    'function runServerCheck(name) {' +
+    '  if (name === "checkSetup") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkSetup(); }' +
+    '  else if (name === "checkStock") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkStock(); }' +
+    '  else if (name === "checkKas") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkKas(); }' +
+    '  else if (name === "checkReady") { google.script.run.withSuccessHandler(showStatus).withFailureHandler(onError).checkReady(); }' +
+    '}' +
     '' +
-    'serverChecks.checkSetup();' +
+    'runServerCheck("checkSetup");' +
     '' +
     'function nextStep() {' +
     '  if (step < 3) {' +
@@ -376,7 +376,7 @@ function showOnboardingWizard() {
     '    "<div class=\"btn-bar\" style=\"margin-top:8px\">" +' +
     '    (step > 0 ? "<button class=\"btn btn-outline\" onclick=\"prevStep()\">← Kembali</button>" : "<div></div>") +' +
     '    "</div>";' +
-    '  if (serverChecks[s.check]) serverChecks[s.check]();' +
+    '  runServerCheck(s.check);' +
     '}' +
     '</script>'
   ).setWidth(480).setHeight(380);
