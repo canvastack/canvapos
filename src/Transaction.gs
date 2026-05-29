@@ -97,9 +97,9 @@ function simpanTransaksi() {
     var resepData = shResep.getDataRange().getValues();
     var PR = COL.RESEP;
     for (var i = 0; i < batchFormats.length; i++) {
-      var varianItem = batchRows[i][6]; // col F = varian
+      var varianItem = batchRows[i][COL.TRANSAKSI.VARIAN]; // index 5
       var qty = batchFormats[i][0];
-      var toppingStr = batchRows[i][8]; // col H = topping
+      var toppingStr = batchRows[i][COL.TRANSAKSI.TOPPING]; // index 7
 
       var itemsToFind = [varianItem];
       if (toppingStr) {
@@ -204,16 +204,12 @@ function simpanTransaksi() {
       }
       // Batch write stock updates
       if (stockRows.length > 0) {
-        var terjualRange = shStock.getRange(stockRows[0].row, COLx(PC.TERJUAL), stockRows.length, 1);
-        var sisaRange = shStock.getRange(stockRows[0].row, COLx(PC.SISA), stockRows.length, 1);
-        var terjualData = [];
-        var sisaData = [];
-        for (var si = 0; si < stockRows.length; si++) {
-          terjualData.push([stockRows[si].terjual]);
-          sisaData.push([stockRows[si].sisa]);
-        }
-        terjualRange.setValues(terjualData);
-        sisaRange.setValues(sisaData);
+      // Write stock updates individually (rows may be non-contiguous)
+      for (var si = 0; si < stockRows.length; si++) {
+        var sr = stockRows[si].row;
+        shStock.getRange(sr, COLx(PC.TERJUAL)).setValue(stockRows[si].terjual);
+        shStock.getRange(sr, COLx(PC.SISA)).setValue(stockRows[si].sisa);
+      }
       }
     }
 
@@ -239,21 +235,29 @@ function simpanTransaksi() {
 function _clearPOSRows(shPOS) {
   var lastRow = shPOS.getLastRow();
   var rowCount = lastRow - POS_START_ROW + 1;
-  if (rowCount <= POS_INIT_ROWS) {
-    shPOS.getRange(POS_START_ROW, 1, POS_INIT_ROWS, 8).clearContent();
-    // Reset formulas
-    for (var i = 0; i < POS_INIT_ROWS; i++) {
-      var r = POS_START_ROW + i;
-      shPOS.getRange(r, COLx(COL.POS.VARIAN)).clearDataValidation();
-    }
-    return;
+  // Hapus semua baris data dari POS
+  shPOS.deleteRows(POS_START_ROW, Math.max(rowCount, POS_INIT_ROWS));
+  // Bangun ulang POS start rows
+  for (var i = 0; i < POS_INIT_ROWS; i++) {
+    var r = POS_START_ROW + i;
+    var no = i + 1;
+    var bg = i % 2 === 0 ? "#FEF9E7" : "#FFFFFF";
+    styleOrderRow(shPOS, r, no, bg);
   }
-  // Hapus baris extra (dari PosStart + InitRows sampai LastRow)
-  shPOS.deleteRows(POS_START_ROW + POS_INIT_ROWS, rowCount - POS_INIT_ROWS);
-  shPOS.getRange(POS_START_ROW, 1, POS_INIT_ROWS, 8).clearContent();
-  for (var j = 0; j < POS_INIT_ROWS; j++) {
-    shPOS.getRange(POS_START_ROW + j, COLx(COL.POS.VARIAN)).clearDataValidation();
+  // Bangun GRAND TOTAL row
+  var gtRow = POS_START_ROW + POS_INIT_ROWS;
+  if (shPOS.getLastRow() < gtRow) {
+    shPOS.getRange(gtRow, 1, 1, 8).setBackground("#333333").setFontColor("#FFFFFF")
+      .setFontWeight("bold").setFontSize(10);
   }
+  shPOS.getRange(gtRow, 1).setValue("GRAND TOTAL")
+    .setFontWeight("bold").setFontSize(11);
+  shPOS.getRange(gtRow, COLx(COL.POS.TOTAL)).setFormula(F("=SUM(H{start}:H{end})", {start: POS_START_ROW, end: gtRow - 1}))
+    .setNumberFormat('"Rp "#,##0').setFontWeight("bold").setFontSize(11);
+  shPOS.getRange(gtRow, 7).setNumberFormat('"Rp "#,##0');
+  shPOS.getRange(gtRow, 6).setNumberFormat('"Rp "#,##0');
+  var props = PropertiesService.getDocumentProperties();
+  props.setProperty("POS_GT_ROW", gtRow);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

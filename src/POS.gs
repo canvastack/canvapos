@@ -35,6 +35,8 @@ function addRowPOS() {
     sh.getRange(gtRow, 8).setFormula(F("=SUM(H{start}:H{end})", {start: POS_START_ROW, end: gtRow - 1}));
     PropertiesService.getDocumentProperties().setProperty("POS_GRAND_TOTAL_ROW", String(gtRow));
 
+    _renumberAndFixPOS(sh);
+
     ss.setActiveSheet(sh);
     sh.setActiveRange(sh.getRange(newR, 2));
   });
@@ -194,7 +196,7 @@ function _renumberAndFixPOS(sh) {
       .setFontColor(C.DARK).setFontWeight("bold").setFontSize(10);
 
     sh.getRange(r, 5).setFormula(
-      F("=IF(B{row}=\"\",\"\",IF(D{row}=\"\",0,COUNTA(SPLIT(REGEXREPLACE(TRIM(D{row}),\"\\s*,\\s*$\",\"\"),\",\"))))", {row: r})
+      F("=IF(B{row}=\"\",\"\",IF(D{row}=\"\",0,LEN(TRIM(D{row}))-LEN(SUBSTITUTE(TRIM(D{row}),\",\",\"\"))+1))", {row: r})
     );
     sh.getRange(r, 6).setFormula(F("=IF(B{row}=\"\",\"\",E{row}*C{row}*{HARGA_TOPPING})", {row: r, HARGA_TOPPING: HARGA_TOPPING}));
     sh.getRange(r, 7).setFormula(F("=IF(B{row}=\"\",\"\",C{row}*{HARGA_BASE})", {row: r, HARGA_BASE: HARGA_BASE}));
@@ -255,9 +257,9 @@ function restorePOSFromBackup() {
 
   for (var i = 0; i < backup.data.length; i++) {
     var r = POS_START_ROW + i;
-    sh.getRange(r, 1, 1, 8).setValues([backup.data[i]]);
+    var no = i + 1;
     var bg = i % 2 === 0 ? C.INPUT : C.WHITE;
-    styleData(sh.getRange(r, 1, 1, 8), bg);
+    styleOrderRow(sh, r, no, bg);
     sh.setRowHeight(r, 24);
   }
 

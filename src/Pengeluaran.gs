@@ -163,9 +163,8 @@ function simpanPengeluaran() {
     shPen.getRange(r, COLx(PP.HARGA)).setNumberFormat('"Rp "#,##0');
 
     var syncedAction = {row: r, namaItem: namaItem};
-    if (KATEGORI_STOK.indexOf(kategori) >= 0 && jumlah > 0) {
-      var packSize = bahanPackMap[namaItem.toLowerCase()] || 1;
-      var qtyStok  = jumlah * packSize;
+      if (KATEGORI_STOK.indexOf(kategori) >= 0 && jumlah > 0) {
+      var qtyStok  = jumlah;
 
       var found = false;
       for (var j = 0; j < stockData.length; j++) {

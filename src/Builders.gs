@@ -674,7 +674,7 @@ function refreshDashboard() {
     if (trxLast > 2) {
       var lastData = shTrx.getRange(trxLast, 1, 1, 12).getValues()[0];
       sh.getRange("B3:D3").merge().setValue(
-        lastData[0] + " — " + (lastData[6] || "") + " — Rp " + ((lastData[11] || 0).toLocaleString("id-ID"))
+        lastData[0] + " — " + (lastData[COL.TRANSAKSI.VARIAN] || "") + " — Rp " + ((lastData[COL.TRANSAKSI.TOTAL] || 0).toLocaleString("id-ID"))
       ).setFontSize(10).setFontColor(C.DARK);
     }
   }
@@ -682,7 +682,7 @@ function refreshDashboard() {
   // Row 4: Pendapatan Hari Ini (from Pendapatan sheet)
   var shPen = getSheet(SHEET.PENDAPATAN);
   if (shPen) {
-    var penVal = shPen.getRange("B5").getValue() || 0;
+    var penVal = shPen.getRange("B8").getValue() || 0;
     sh.getRange("B4:D4").merge().setValue("Rp " + Number(penVal).toLocaleString("id-ID"))
       .setFontSize(10).setFontColor(C.DARK);
   }
@@ -1067,10 +1067,7 @@ function _getNamedRangeDefs() {
     { name: "TRX_Cup",    sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.CUP,     startRow: 3 },
     { name: "TRX_Total",  sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.TOTAL,   startRow: 3 },
     { name: "TRX_JmlTop", sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.JML_TOP, startRow: 3 },
-    { name: "TRX_Varian", sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.VARIAN,  startRow: 3 },
-    { name: "TRX_Topping",sheet: SHEET.TRANSAKSI, col: COL.TRANSAKSI.TOPPING, startRow: 3 },
-    { name: "BAHAN_Lookup",sheet: SHEET.BAHAN,     col: COL.BAHAN.NAMA,       startRow: 2, width: 5 },
-    { name: "PEN_Tgl",    sheet: SHEET.PENGELUARAN,col: COL.PENGELUARAN.TGL,  startRow: 4 }
+    { name: "BAHAN_Lookup",sheet: SHEET.BAHAN,     col: COL.BAHAN.NAMA,       startRow: 2, width: 5 }
   ];
 }
 

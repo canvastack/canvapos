@@ -198,11 +198,18 @@ function refreshLaporan() {
     return;
   }
 
+  var lastRow = shTrx.getLastRow();
+  if (lastRow < 3) {
+    SpreadsheetApp.getUi().alert("Belum ada data transaksi.");
+    return;
+  }
+
+  var hppLookup = {};
+  var hppBomOk = false;
+
   withLock(20000, function() {
     var C = getC();
 
-    var hppLookup = {};
-    var hppBomOk = false;
     try {
       hppLookup = getHPPLookup();
       hppBomOk = true;
@@ -213,10 +220,6 @@ function refreshLaporan() {
 
   // ── Baca semua data Transaksi (mulai baris 3) ──────────────────────────
   var lastRow = shTrx.getLastRow();
-  if (lastRow < 3) {
-    SpreadsheetApp.getUi().alert("Belum ada data transaksi.");
-    return;
-  }
 
   // Kolom: A=NoTrx, B=NoItem, C=Tanggal, D=Jam, E=Kasir, F=Varian,
   //        G=JmlCup, H=Topping, I=JmlTop, J=HargaBase, K=HargaTop, L=Total
@@ -313,21 +316,21 @@ function refreshLaporan() {
     var labaBg = labaHI >= 0 ? C.LGREEN : C.LRED;
     var labaFg = labaHI >= 0 ? C.GREEN : C.RED;
 
-    shPen.getRange(5, COLx(COL.PENDAPATAN.LABEL)).setValue(todayStr).setFontSize(10).setHorizontalAlignment("center");
-    shPen.getRange(6, COLx(COL.PENDAPATAN.LABEL)).setValue(todayData.trx).setFontSize(10).setHorizontalAlignment("center");
-    shPen.getRange(7, COLx(COL.PENDAPATAN.LABEL)).setValue(todayData.cup).setFontSize(10).setHorizontalAlignment("center");
-    shPen.getRange(8, COLx(COL.PENDAPATAN.LABEL)).setValue(todayData.pendapatan).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
-    shPen.getRange(9, COLx(COL.PENDAPATAN.LABEL)).setValue(hppHI).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
-    shPen.getRange(10, COLx(COL.PENDAPATAN.LABEL)).setValue(labaHI).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right").setBackground(labaBg).setFontColor(labaFg).setFontWeight("bold");
-    shPen.getRange(11, COLx(COL.PENDAPATAN.LABEL)).setValue(marginHI).setFontSize(10).setNumberFormat('0.00"%"').setHorizontalAlignment("center");
+    shPen.getRange(5, COLx(COL.PENDAPATAN.TRX)).setValue(todayStr).setFontSize(10).setHorizontalAlignment("center");
+    shPen.getRange(6, COLx(COL.PENDAPATAN.TRX)).setValue(todayData.trx).setFontSize(10).setHorizontalAlignment("center");
+    shPen.getRange(7, COLx(COL.PENDAPATAN.TRX)).setValue(todayData.cup).setFontSize(10).setHorizontalAlignment("center");
+    shPen.getRange(8, COLx(COL.PENDAPATAN.TRX)).setValue(todayData.pendapatan).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
+    shPen.getRange(9, COLx(COL.PENDAPATAN.TRX)).setValue(hppHI).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
+    shPen.getRange(10, COLx(COL.PENDAPATAN.TRX)).setValue(labaHI).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right").setBackground(labaBg).setFontColor(labaFg).setFontWeight("bold");
+    shPen.getRange(11, COLx(COL.PENDAPATAN.TRX)).setValue(marginHI).setFontSize(10).setNumberFormat('0.00"%"').setHorizontalAlignment("center");
   } else {
-    shPen.getRange(5, COLx(COL.PENDAPATAN.LABEL)).setValue(todayStr).setFontSize(10).setHorizontalAlignment("center");
-    shPen.getRange(6, COLx(COL.PENDAPATAN.LABEL)).setValue(0).setFontSize(10).setHorizontalAlignment("center");
-    shPen.getRange(7, COLx(COL.PENDAPATAN.LABEL)).setValue(0).setFontSize(10).setHorizontalAlignment("center");
-    shPen.getRange(8, COLx(COL.PENDAPATAN.LABEL)).setValue(0).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
-    shPen.getRange(9, COLx(COL.PENDAPATAN.LABEL)).setValue(0).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
-    shPen.getRange(10, COLx(COL.PENDAPATAN.LABEL)).setValue(0).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right").setBackground(C.LGREEN);
-    shPen.getRange(11, COLx(COL.PENDAPATAN.LABEL)).setValue(0).setFontSize(10).setNumberFormat('0.00"%"').setHorizontalAlignment("center");
+    shPen.getRange(5, COLx(COL.PENDAPATAN.TRX)).setValue(todayStr).setFontSize(10).setHorizontalAlignment("center");
+    shPen.getRange(6, COLx(COL.PENDAPATAN.TRX)).setValue(0).setFontSize(10).setHorizontalAlignment("center");
+    shPen.getRange(7, COLx(COL.PENDAPATAN.TRX)).setValue(0).setFontSize(10).setHorizontalAlignment("center");
+    shPen.getRange(8, COLx(COL.PENDAPATAN.TRX)).setValue(0).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
+    shPen.getRange(9, COLx(COL.PENDAPATAN.TRX)).setValue(0).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right");
+    shPen.getRange(10, COLx(COL.PENDAPATAN.TRX)).setValue(0).setFontSize(10).setNumberFormat('"Rp "#,##0').setHorizontalAlignment("right").setBackground(C.LGREEN);
+    shPen.getRange(11, COLx(COL.PENDAPATAN.TRX)).setValue(0).setFontSize(10).setNumberFormat('0.00"%"').setHorizontalAlignment("center");
   }
 
   // ── Tulis Rekap Harian ke sheet Pendapatan ─────────────────────────────
@@ -416,6 +419,11 @@ function refreshLaporan() {
   });
 
   SpreadsheetApp.flush();
+  refreshDashboard();
+  });
+  refreshNamedRanges();
+
+  // Alert after lock is released
   try {
     var bomStatus = hppBomOk ? "🧮 BOM HPP: Aktif" : "⚠ BOM HPP: Gagal (pakai konstanta)";
     var diag = bomStatus + "\n" +
@@ -430,8 +438,5 @@ function refreshLaporan() {
       diag
     );
   } catch(e) {}
-  refreshDashboard();
-  });
-  refreshNamedRanges();
   timeEnd("refreshLaporan");
 }
