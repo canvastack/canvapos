@@ -29,18 +29,10 @@ function buildPengeluaran(ss) {
     .setBackground(C.GREEN).setFontColor(C.WHITE)
     .setFontWeight("bold").setFontSize(11)
     .setHorizontalAlignment("center").setVerticalAlignment("middle");
-  sh.getRange("E2:F2").merge()
-    .setValue("ℹ Isi baris → Simpan & Sync Stok")
+  sh.getRange("E2:H2").merge()
+    .setValue("ℹ Isi baris baru di bawah → klik menu POS → Simpan & Sync Stok")
     .setBackground(C.LIGHT).setFontColor(C.DARK).setFontSize(10)
     .setHorizontalAlignment("left").setVerticalAlignment("middle");
-  // Checkbox 📅 — centang buat pilih tanggal
-  sh.getRange("G2").setDataValidation(
-    SpreadsheetApp.newDataValidation().requireCheckbox().setAllowInvalid(false).build()
-  ).setValue(false).setBackground("#E67E22").setHorizontalAlignment("center");
-  sh.getRange("H2").setValue("📅")
-    .setBackground("#E67E22").setFontColor(C.WHITE)
-    .setFontWeight("bold").setFontSize(16)
-    .setHorizontalAlignment("center").setVerticalAlignment("middle");
   sh.setRowHeight(2, 30);
 
   // ── Header ────────────────────────────────────────────────────────────
@@ -267,15 +259,6 @@ function onEditPengeluaran(e) {
   var START_ROW     = 4;
 
   var COL_KATEGORI  = 2;  // Kolom B
-
-  // ── Handle checkbox 📅 di baris 2 → date picker ──
-  if (row === 2 && col === 7 && range.getValue() === true) {
-    if (typeof showDatePickerGeneric === 'function') {
-      showDatePickerGeneric();
-    }
-    range.setValue(false);
-    return;
-  }
 
   if (row < START_ROW) return;
 

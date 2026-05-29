@@ -62,27 +62,22 @@ function onOpen() {
   // Refresh named ranges (fix width BAHAN_Lookup etc.)
   refreshNamedRanges();
 
-  // Pasang date picker native & checkbox 📅 di kolom A Pengeluaran
+  // Pasang date validation di kolom A Pengeluaran
   var C = getC();
   var shP = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Pengeluaran");
   if (shP) {
     shP.getRange("A4:A203").setDataValidation(
       SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false)
-        .setHelpText("Double-click atau klik icon 📅 untuk pilih tanggal").build()
+        .setHelpText("Double-click untuk pilih tanggal").build()
     );
-    // Checkbox 📅 di G2, label di H2
+    // Kembalikan row 2 ke merge E2:H2 (bersihin checkbox bekas)
     try { shP.getRange("E2:H2").breakApart(); } catch(_) {}
-    shP.getRange("E2:F2").merge()
-      .setValue("ℹ Isi baris → Simpan & Sync Stok")
+    shP.getRange("E2:H2").merge()
+      .setValue("ℹ Isi baris baru di bawah → klik menu POS → Simpan & Sync Stok")
       .setBackground(C.LIGHT).setFontColor(C.DARK).setFontSize(10)
       .setHorizontalAlignment("left").setVerticalAlignment("middle");
-    shP.getRange("G2").setDataValidation(
-      SpreadsheetApp.newDataValidation().requireCheckbox().setAllowInvalid(false).build()
-    ).setValue(false).setBackground("#E67E22").setHorizontalAlignment("center");
-    shP.getRange("H2").setValue("📅")
-      .setBackground("#E67E22").setFontColor(C.WHITE)
-      .setFontWeight("bold").setFontSize(16)
-      .setHorizontalAlignment("center").setVerticalAlignment("middle");
+    shP.getRange("G2").clearAll();
+    shP.getRange("H2").clearAll();
     shP.setRowHeight(2, 30);
   }
 }
@@ -228,10 +223,6 @@ function onSelectionChange(e) {
   // Pengeluaran: kolom Tanggal (A), baris data (4+), cell kosong → auto isi tanggal hari ini
   if (shName === "Pengeluaran" && col === 1 && row >= 4 && e.range.getValue() === "") {
     e.range.setValue(new Date()).setNumberFormat("DD/MM/YYYY");
-    e.range.setDataValidation(
-      SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false)
-        .setHelpText("Klik ikon 📅 atau double-click untuk pilih tanggal").build()
-    );
     return;
   }
   });
