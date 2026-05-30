@@ -121,7 +121,7 @@ function buildBahan(ss) {
   setSheetFont(sh);
   sh.setTabColor(C.BLUE);
 
-  var headers = ["Kategori","Nama Bahan","Satuan","Ukuran/Pack","Harga Beli","Harga Per Piece"];
+  var headers = ["Kategori","Nama Bahan","Satuan (base)","Ukuran/Pack","Harga Beli","Harga per Satuan"];
   var hRow = sh.getRange(1, 1, 1, headers.length);
   hRow.setValues([headers]);
   styleHeader(hRow, C.BLUE);
@@ -129,10 +129,11 @@ function buildBahan(ss) {
 
   var data = getBahanData();
 
-  // Tulis kolom A-E (tanpa Harga Per Piece)
+  // Tulis kolom A-E (tanpa Harga per Satuan)
   sh.getRange(2, 1, data.length, data[0].length).setValues(data);
 
-  // Kolom F (Harga Per Piece) = =E/D
+  // Kolom F (Harga per Satuan) = Harga Beli / Ukuran per Pack
+  // Contoh: Pop Ice 15.000/10 = 1.500/sachet; Kopi 200.000/1000 = 200/gram
   data.forEach(function(_, i) {
     var r = i + 2;
     sh.getRange(r, 6).setFormula("=IFERROR(E"+r+"/D"+r+", 0)");
@@ -162,8 +163,9 @@ function buildResep(ss) {
   sh.setTabColor(C.PURPLE);
 
   // Struktur Kolom Relasional Many-to-Many
-  // E = Harga Per Piece (VLOOKUP dari Bahan), F = Harga Per Takaran (C × E)
-  var headers = ["Nama Menu / Varian", "Nama Bahan Baku", "Takaran (Qty Usage)", "Satuan Penggunaan", "Harga Per Piece", "Harga Per Takaran"];
+  // E = Harga per Satuan Bahan (VLOOKUP dari Bahan), F = Biaya per Resep (C × E)
+  var headers = ["Nama Menu / Varian", "Nama Bahan Baku", "Takaran (Qty)",
+                 "Satuan", "Harga per Satuan Bahan", "Biaya per Resep"];
   var hRow = sh.getRange(1, 1, 1, headers.length);
   hRow.setValues([headers]);
   styleHeader(hRow, C.PURPLE);
@@ -186,8 +188,11 @@ function buildResep(ss) {
     setCurrency(sh.getRange(r, 5, 1, 2));
   });
 
+  // Ringkasan HPP per Menu (di bagian bawah)
+  _addResepSummary(sh, C, data.length);
+
   // Set lebar kolom yang proporsional
-  [220, 200, 140, 130, 140, 140].forEach(function(w, i) { sh.setColumnWidth(i+1, w); });
+  [220, 200, 140, 100, 150, 150].forEach(function(w, i) { sh.setColumnWidth(i+1, w); });
   sh.setFrozenRows(1);
 }
 
@@ -196,7 +201,8 @@ function buildResep(ss) {
  * Formula kolom E-F tetap aman. Panggil setelah update data BOM.
  */
 function syncResepData() {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET.RESEP);
+  var C = getC();
+  var sh = getSheet(SHEET.RESEP);
   if (!sh) return;
   var data = generateBOMData();
   if (!data || !data.length) return;
@@ -206,6 +212,56 @@ function syncResepData() {
   if (lastRow > data.length + 1) {
     sh.getRange(data.length + 2, 1, lastRow - data.length - 1, 6).clearContent();
   }
+  // Re-add ringkasan HPP
+  _addResepSummary(sh, C, data.length);
+}
+
+/**
+ * Tambah ringkasan HPP per Menu/Varian di bagian bawah sheet Resep.
+ * @param {Sheet} sh - Sheet Resep
+ * @param {Object} C - Warna helper
+ * @param {number} dataLength - Jumlah baris data BOM
+ */
+function _addResepSummary(sh, C, dataLength) {
+  var lastRow = sh.getLastRow();
+  // Bersihkan baris setelah data (spasi + summary)
+  if (lastRow > dataLength + 1) {
+    sh.getRange(dataLength + 2, 1, lastRow - dataLength - 1, 6).clearContent();
+  }
+
+  var summaryRow = dataLength + 3; // beri 1 baris spasi
+  sh.getRange(summaryRow, 1, 1, 6).merge()
+    .setValue("📊 RINGKASAN HPP PER MENU")
+    .setBackground(C.PURPLE).setFontColor(C.WHITE)
+    .setFontWeight("bold").setFontSize(11)
+    .setHorizontalAlignment("center").setVerticalAlignment("middle");
+  sh.setRowHeight(summaryRow, 28);
+
+  var hRow = summaryRow + 1;
+  var headerLabels = ["Menu / Varian", "", "", "", "", "Total HPP per Cup"];
+  sh.getRange(hRow, 1, 1, 6).setValues([headerLabels])
+    .setFontWeight("bold").setFontSize(10)
+    .setBackground(C.DARK).setFontColor(C.WHITE);
+
+  // Kumpulkan menu unik dari data BOM
+  var data = sh.getRange(2, 1, dataLength, 1).getValues();
+  var seen = {};
+  var menus = [];
+  data.forEach(function(row) {
+    var name = String(row[0]).trim();
+    if (name && !seen[name]) {
+      seen[name] = true;
+      menus.push(name);
+    }
+  });
+
+  menus.forEach(function(menu, i) {
+    var r = hRow + 1 + i;
+    sh.getRange(r, 1).setValue(menu);
+    sh.getRange(r, 6).setFormula("=SUMIF(A$2:A$" + (dataLength + 1) + ",A" + r + ",F$2:F$" + (dataLength + 1) + ")");
+    setCurrency(sh.getRange(r, 6, 1, 1));
+    applyZebraRow(sh, r, i, 6);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -221,47 +277,59 @@ function buildStock(ss) {
   setSheetFont(sh);
   sh.setTabColor(C.GREEN);
 
-  var headers = ["Kategori","Nama Bahan","Satuan","Stok Awal","Terjual","Sisa Stok","Min. Stok","Status"];
+  var headers = ["Kategori","Nama Bahan","Satuan","Stok Masuk","Terjual","Sisa Stok","Min. Stok","Status"];
   var hRange = sh.getRange(1, 1, 1, headers.length);
   hRange.setValues([headers]);
   styleHeader(hRange, C.GREEN);
   sh.setRowHeight(1, 32);
 
-  var data = [];
+  // Load data dari Bahan, semua 0
+  var bahanData = getBahanData();
+  var data = bahanData.map(function(row) {
+    return [row[COL.BAHAN.KATEGORI], row[COL.BAHAN.NAMA], row[COL.BAHAN.SATUAN],
+            0, 0, 0, 0, ""];
+  });
 
   data.forEach(function(row, i) {
     var r = i + 2;
-    // Kolom: A=Kategori, B=Nama Bahan, C=Satuan, D=Stok Awal, E=Terjual,
-    //        F=Sisa Stok, G=Min. Stok, H=Status
-    var kat = row[0], nama = row[1], satuan = row[2], stokAwal = row[3], minStok = row[4];
+    // Kolom: A=Kategori, B=Nama Bahan, C=Satuan, D=Stok Masuk, E=Terjual,
+    //        F=Sisa Stok (formula = D-E), G=Min. Stok, H=Status
+    var kat = row[0], nama = row[1], satuan = row[2],
+        stokMasuk = row[3], terjual = row[4], sisa = row[5], minStok = row[6];
     sh.getRange(r,1).setValue(kat);
     sh.getRange(r,2).setValue(nama);
     sh.getRange(r,3).setValue(satuan);
-    sh.getRange(r,4).setValue(stokAwal);
-
-    sh.getRange(r,6).setValue(stokAwal); // F = Sisa Stok (value, biar bisa di-write langsung)
+    sh.getRange(r,4).setValue(stokMasuk);
+    sh.getRange(r,5).setValue(terjual);
+    // Sisa Stok (F) = FORMULA = D - E — auto, gak bisa diedit manual
+    sh.getRange(r,6).setFormula(F("=IF({d}=0,\"\",{d}-{e})", {d: 'D'+r, e: 'E'+r}))
+      .setNumberFormat("#,##0");
     sh.getRange(r,7).setValue(minStok);
-    sh.getRange(r,8).setFormula(F("=IF(F{row}<=G{row},\"⚠ RESTOCK\",\"✓ OK\")", {row: r}));
+    // Status: tampilkan selisih dan satuan
+    sh.getRange(r,8).setFormula(F(
+      '=IF(F{row}<=G{row},"⚠ RESTOCK ("&TEXT(G{row}-F{row},"0")&" "&LOWER(C{row})&" kurang)","✓ OK ("&TEXT(F{row},"0")&" "&LOWER(C{row})&" tersisa)")',
+      {row: r}
+    ));
 
     applyZebraRow(sh, r, i, 8);
     sh.setRowHeight(r, 24);
   });
 
-  // Conditional formatting untuk semua baris (data dinamis dari Pengeluaran)
+  // Conditional formatting — pakai STARTS_WITH karena status skrg lebih panjang
   var rules = sh.getConditionalFormatRules();
   rules.push(SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo("⚠ RESTOCK")
+    .whenTextStartsWith("⚠ RESTOCK")
     .setBackground(C.LRED).setFontColor(C.RED).setBold(true)
     .setRanges([sh.getRange("A2:H1000")])
     .build());
   rules.push(SpreadsheetApp.newConditionalFormatRule()
-    .whenTextEqualTo("✓ OK")
+    .whenTextStartsWith("✓ OK")
     .setBackground(C.LGREEN).setFontColor(C.GREEN).setBold(true)
     .setRanges([sh.getRange("A2:H1000")])
     .build());
   sh.setConditionalFormatRules(rules);
 
-  [100,200,80,80,80,80,80,110].forEach(function(w,i) { sh.setColumnWidth(i+1,w); });
+  [100,200,80,80,80,80,80,220].forEach(function(w,i) { sh.setColumnWidth(i+1,w); });
   sh.setFrozenRows(1);
 }
 
@@ -537,9 +605,21 @@ function buildPanduan(ss) {
     ["Es Teh Original","Rp 5.000/cup","",""],
     ["Tambah Topping","Rp 1.000/jenis/cup","",""],
     ["","","",""],
-    ["⚠️ INPUT BAHAN (Gram)","","",""],
-    ["Untuk coffee (Kopi Robusta/Arabika)","Input jumlah gram — 1000 = 1Kg","",""],
-    ["Contoh: beli 1Kg kopi","Masukkan 1000 di kolom Jumlah (Gram)","",""],
+    ["📏 UNIT INPUT GUIDE","","",""],
+    ["Bahan","Beli per","Input Jumlah","Satuan Stok"],
+    ["Pop Ice (all varian)","1 renceng = 10 sachet","10","Piece"],
+    ["Kopi Robusta & Arabika","1 kg","1000","Gram"],
+    ["Teh Celup","1 pack = 100 kantong","100","Piece"],
+    ["Gula Pasir","1 kg","1000","Gram"],
+    ["Susu SKM","1 kaleng = 370g","370","Gram"],
+    ["Gula Aren","500g","500","Gram"],
+    ["Es Batu Kristal","1 balok = 20kg","20","Kg"],
+    ["Air (Galon)","1 galon = 19L","19","Liter"],
+    ["Cup Plastik / Tutup","1 pack = 50 pcs","50","Piece"],
+    ["Paper Cup / Tutup","1 pack = 50 pcs","50","Piece"],
+    ["Sedotan Biasa","1 pack = 500 pcs","500","Piece"],
+    ["Sedotan Boba","1 pack = 250 pcs","250","Piece"],
+    ["Topping (Keju, Choco, dll)","250g","250","Gram"],
     ["","","",""],
     ["📦 HPP ESTIMASI","","",""],
     ["HPP per cup (tanpa topping)","Rp 2.200","",""],
@@ -555,7 +635,7 @@ function buildPanduan(ss) {
 
   panduan.forEach(function(row, i) {
     var r = i + 10;
-    if (row[0] && row[0].match(/^[🧋💰📦📊]/)) {
+    if (row[0] && row[0].match(/^[🧋💰📦📊📏]/)) {
       sh.getRange(r, 1, 1, 4).merge()
         .setValue(row[0])
         .setBackground(C.ORANGE).setFontColor(C.WHITE)

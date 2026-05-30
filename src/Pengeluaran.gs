@@ -2,6 +2,8 @@
 // CanvaPOS — Pengeluaran.gs (Expense Tracking & Stock Sync)
 // ═══════════════════════════════════════════════════════════════════════════
 
+var KATEGORI_LIST_PEN = ["Bahan Utama","Topping","Kemasan","Bahan Pendukung","Operasional","Modal Awal","Lain-lain"];
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SHEET — PENGELUARAN (input langsung di sheet, dropdown dari Bahan)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -25,42 +27,44 @@ function buildPengeluaran(ss) {
 
   // ── Tombol Simpan & Sync ───────────────────────────────────────────────
   sh.getRange("A2:D2").merge()
-    .setValue("💾 Simpan & Sync Stok")
+    .setValue("💾 Simpan & Sync Stok  |  ➕ Add Row (menu POS)")
     .setBackground(C.GREEN).setFontColor(C.WHITE)
     .setFontWeight("bold").setFontSize(11)
     .setHorizontalAlignment("center").setVerticalAlignment("middle");
   sh.getRange("E2:H2").merge()
-    .setValue("ℹ Isi baris baru di bawah → klik menu POS → Simpan & Sync Stok")
+    .setValue("ℹ Menu POS → Add Row Pengeluaran untuk navigasi baris baru + validation otomatis")
     .setBackground(C.LIGHT).setFontColor(C.DARK).setFontSize(10)
     .setHorizontalAlignment("left").setVerticalAlignment("middle");
   sh.setRowHeight(2, 30);
 
   // ── Header ────────────────────────────────────────────────────────────
-  var headers = ["Tanggal","Kategori","Nama Item","Satuan","Jumlah","Harga Satuan","Total","Status Stok"];
+  var headers = ["Tanggal","Kategori","Nama Item","Satuan (base)","Jumlah","Harga per Unit","Total","Status Stok"];
   sh.getRange(3, 1, 1, headers.length).setValues([headers])
     .setBackground("#E67E22").setFontColor(C.WHITE)
     .setFontWeight("bold").setFontSize(11)
     .setHorizontalAlignment("center").setVerticalAlignment("middle");
   sh.setRowHeight(3, 28);
 
-  // ── Dropdown Kategori untuk 50 baris ke depan ─────────────────────────
-  var KATEGORI_LIST = ["Bahan Utama","Topping","Kemasan","Bahan Pendukung","Operasional","Lain-lain"];
+  // ── Dropdown Kategori untuk 5000 baris ─────────────────────────────
   var katRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(KATEGORI_LIST, true)
+    .requireValueInList(KATEGORI_LIST_PEN, true)
     .setAllowInvalid(false).build();
-  sh.getRange(4, 2, 200, 1).setDataValidation(katRule);
+  sh.getRange(4, 2, 5000, 1).setDataValidation(katRule);
 
-  // ── Formula Total otomatis untuk 200 baris ────────────────────────────
-  for (var i = 0; i < 200; i++) {
-    var r = i + 4;
-    sh.getRange(r, 7).setFormula("=IF(E"+r+"*F"+r+"=0,\"\",E"+r+"*F"+r+")")
-      .setNumberFormat('"Rp "#,##0');
-    sh.getRange(r, 8).setValue("").setFontSize(10);
+  // ── Formula Total batch untuk 5000 baris (per-row, no ArrayFormula conflict) ──
+  var TOTAL_ROWS = 5000;
+  var formulas = [];
+  for (var fi = 0; fi < TOTAL_ROWS; fi++) {
+    var fr = fi + 4;
+    formulas.push(["=IF(E" + fr + "*F" + fr + "=0,\"\",E" + fr + "*F" + fr + ")"]);
   }
+  sh.getRange(4, 7, TOTAL_ROWS, 1).setFormulas(formulas)
+    .setNumberFormat('"Rp "#,##0');
+  sh.getRange("H4:H" + (3 + TOTAL_ROWS)).setFontSize(10);
 
-  // ── Format kolom Tanggal & Harga (sebelum sample data) ──────────────
-  sh.getRange("A4:A203").setNumberFormat("DD/MM/YYYY");
-  sh.getRange("F4:F203").setNumberFormat('"Rp "#,##0');
+  // ── Format kolom Tanggal & Harga ──────────────────────────────────
+  sh.getRange("A4:A5000").setNumberFormat("DD/MM/YYYY");
+  sh.getRange("F4:F5000").setNumberFormat('"Rp "#,##0');
 
   // ── Data kosong — isi manual ────────────────────────────────────────
 
@@ -70,7 +74,7 @@ function buildPengeluaran(ss) {
     .setAllowInvalid(false)
     .setHelpText("Klik untuk pilih tanggal dari kalender")
     .build();
-  sh.getRange("A4:A203").setDataValidation(dateRule);
+  sh.getRange("A4:A5000").setDataValidation(dateRule);
 
   [110,130,180,90,80,130,130,120].forEach(function(w,i) { sh.setColumnWidth(i+1,w); });
   sh.setFrozenRows(3);
@@ -98,7 +102,18 @@ function simpanPengeluaran() {
   }
 
   var lastRow = shPen.getLastRow();
-  if (lastRow < 4) { ui.alert("Belum ada data pengeluaran."); return; }
+  // Cari baris terakhir yang beneran ada datanya (A-C), skip baris formula kosong
+  var lastDataRow = lastRow;
+  if (lastRow > 200) {
+    var scanData = shPen.getRange(4, 1, Math.min(lastRow - 3, 500), 3).getValues();
+    for (var si = scanData.length - 1; si >= 0; si--) {
+      if (String(scanData[si][0]).trim() || String(scanData[si][1]).trim() || String(scanData[si][2]).trim()) {
+        lastDataRow = 4 + si;
+        break;
+      }
+    }
+  }
+  if (lastDataRow < 4) { ui.alert("Belum ada data pengeluaran."); return; }
 
   // ══════════════════════════════════════════════════════════════════════
   // PHASE 1 — Read & Validate (no writes)
@@ -117,7 +132,7 @@ function simpanPengeluaran() {
     }
   }
 
-  var penData = shPen.getRange(4, 1, lastRow - 3, 8).getValues();
+  var penData = shPen.getRange(4, 1, lastDataRow - 3, 8).getValues();
   var stockLastRow = shStk.getLastRow();
   var stockData = stockLastRow > 1
     ? shStk.getRange(2, 1, stockLastRow - 1, 7).getValues()
@@ -202,15 +217,17 @@ function simpanPengeluaran() {
         shStk.getRange(newRow, COLx(PS.SATUAN)).setValue(action.newItem.satuan);
         shStk.getRange(newRow, COLx(PS.STOK_AWAL)).setValue(action.newItem.qtyStok);
         shStk.getRange(newRow, COLx(PS.TERJUAL)).setValue(0);
-        shStk.getRange(newRow, COLx(PS.SISA)).setValue(action.newItem.qtyStok);
+        // Sisa Stok (F) = formula D-E — tidak diisi manual
+        shStk.getRange(newRow, COLx(PS.SISA)).setFormula(F("=IF({d}=0,\"\",{d}-{e})", {d: 'D'+newRow, e: 'E'+newRow}))
+          .setNumberFormat("#,##0");
         shStk.getRange(newRow, COLx(PS.MIN)).setValue(1);
         shStk.getRange(newRow, COLx(PS.STATUS)).setFormula(F("=IF(F{row}<=G{row},\"⚠ RESTOCK\",\"✓ OK\")", {row: newRow}));
         var rBg = (newRow % 2 === 0) ? C.LIGHT : C.WHITE;
         styleData(shStk.getRange(newRow, 1, 1, 8), rBg);
         shStk.setRowHeight(newRow, 24);
       } else if (action.stockRow) {
-        var stokLama = shStk.getRange(action.stockRow, COLx(PS.SISA)).getValue() || 0;
-        shStk.getRange(action.stockRow, COLx(PS.SISA)).setValue(stokLama + action.qtyStok);
+        var stokMasukLama = shStk.getRange(action.stockRow, COLx(PS.STOK_AWAL)).getValue() || 0;
+        shStk.getRange(action.stockRow, COLx(PS.STOK_AWAL)).setValue(stokMasukLama + action.qtyStok);
       }
       shPen.getRange(r, COLx(PP.STATUS)).setValue("✓ Synced")
         .setFontColor(C.GREEN).setFontWeight("bold").setFontSize(10);
@@ -244,112 +261,136 @@ function simpanPengeluaran() {
  */
 function onEditPengeluaran(e) {
   var range = e.range;
-  var row = range.getRow();
-  var col = range.getColumn();
   var shPen = e.source.getActiveSheet();
-  
-  // ─── 1. KONFIGURASI KOLOM TARGET (TAB PENGELUARAN) ───
-  var COL_NAMA_ITEM = 3;  // Kolom C
-  var COL_SATUAN    = 4;  // Kolom D
-  var COL_JUMLAH    = 5;  // Kolom E
-  var COL_HARGA     = 6;  // Kolom F
-  var COL_TOTAL     = 7;  // Kolom G
-  var COL_STATUS    = 8;  // Kolom H
+
+  var COL_KATEGORI  = 2;
+  var COL_NAMA_ITEM = 3;
+  var COL_SATUAN    = 4;
+  var COL_JUMLAH    = 5;
+  var COL_HARGA     = 6;
   var START_ROW     = 4;
 
-  var COL_KATEGORI  = 2;  // Kolom B
+  var rowStart = range.getRow();
+  var rowEnd   = rowStart + range.getNumRows() - 1;
+  var colStart = range.getColumn();
+  var colEnd   = colStart + range.getNumColumns() - 1;
 
-  if (row < START_ROW) return;
+  if (rowStart < START_ROW) return;
 
-  // ── Handle Kategori change → dynamic Nama Item dropdown ──
-  if (col === COL_KATEGORI) {
-    _updateNamaItemDropdown(e.source, shPen, row);
+  // ── Handle Kategori change — single row only ──
+  if (colStart === COL_KATEGORI && colEnd === COL_KATEGORI && range.getNumRows() === 1) {
+    _updateNamaItemDropdown(e.source, shPen, rowStart);
     return;
   }
 
-  // ── Handle Nama Item change → auto-fill ──
-  if (col !== COL_NAMA_ITEM) return;
+  // ── Handle Nama Item change — single or multi row (copy-paste) ──
+  if (colStart > COL_NAMA_ITEM || colEnd < COL_NAMA_ITEM) return;
 
-  var itemName = range.getValue();
-  if (!itemName) {
-    shPen.getRange(row, COL_HARGA, 1, 5).clearContent();
-    return;
+  var namaValues = shPen.getRange(rowStart, COL_NAMA_ITEM, rowEnd - rowStart + 1, 1).getValues();
+  var jumlahValues = shPen.getRange(rowStart, COL_JUMLAH, rowEnd - rowStart + 1, 1).getValues();
+  var kategoriValues = (colStart <= COL_KATEGORI && colEnd >= COL_KATEGORI)
+    ? shPen.getRange(rowStart, COL_KATEGORI, rowEnd - rowStart + 1, 1).getValues()
+    : null;
+
+  for (var ri = 0; ri < namaValues.length; ri++) {
+    var r = rowStart + ri;
+    var itemName = String(namaValues[ri][0]).trim();
+    if (!itemName) {
+      // Single-row clear → hapus auto-filled columns
+      if (range.getNumRows() === 1 && range.getNumColumns() === 1) {
+        shPen.getRange(r, 6, 1, 3).clearContent();
+      }
+      continue;
+    }
+
+    // Check if user pasted jumlah — don't overwrite if they did
+    var userJumlah = Number(jumlahValues[ri][0]) || 0;
+
+    _autoFillPengeluaranRow(e.source, shPen, r, itemName, userJumlah,
+      kategoriValues ? String(kategoriValues[ri][0]).trim() : "");
   }
+}
 
-  var ss = e.source;
+/**
+ * Auto-fill Satuan, Jumlah (if empty), Harga, Total, Status untuk satu row.
+ * @param {Spreadsheet} ss
+ * @param {Sheet} shPen
+ * @param {number} row
+ * @param {string} itemName
+ * @param {number} existingJumlah - 0 if user didn't provide a value
+ * @param {string} kategori - optional, for Operasional fallback
+ */
+function _autoFillPengeluaranRow(ss, shPen, row, itemName, existingJumlah, kategori) {
+  var COL_SATUAN = 4, COL_JUMLAH = 5, COL_HARGA = 6;
   var shBahan = getSheet(SHEET.BAHAN);
   var shStock = getSheet(SHEET.STOCK);
-
   if (!shBahan || !shStock) return;
 
   var bahanData = shBahan.getDataRange().getValues();
   var stockData = shStock.getDataRange().getValues();
 
-  // ─── 2. CONFIG INDEX SOURCE (TAB BAHAN & STOCK) ───
-  var IDX_BAHAN_NAMA   = 1; // Kolom B (Nama Bahan)
-  var IDX_BAHAN_UKURAN = 2; // Kolom C (Ukuran/Pack)
-  var IDX_BAHAN_HARGA  = 4; // Kolom E (Harga Beli per pack)
-
-  var IDX_STOCK_NAMA   = 1; // Kolom B (Nama Item)
-  var IDX_STOCK_SISA   = 5; // Kolom F (Sisa Stok)
-  var IDX_STOCK_MIN    = 6; // Kolom G (Min. Stok)
-
   var hargaItem = 0;
   var satuanItem = "—";
+  var packSize = 1;
   var sisaStock = 0;
   var minStok = 0;
-  var itemFoundInBahan = false;
-  var itemFoundInStock = false;
+  var foundInBahan = false;
+  var foundInStock = false;
 
-  // CARI DATA UTAMA DARI TAB BAHAN
   for (var i = 1; i < bahanData.length; i++) {
-    if (bahanData[i][IDX_BAHAN_NAMA] === itemName) {
-      hargaItem  = bahanData[i][IDX_BAHAN_HARGA];
-      satuanItem = bahanData[i][IDX_BAHAN_UKURAN];
-      itemFoundInBahan = true;
+    if (bahanData[i][COL.BAHAN.NAMA] === itemName) {
+      hargaItem  = bahanData[i][COL.BAHAN.HARGA_BELI];
+      satuanItem = bahanData[i][COL.BAHAN.SATUAN];
+      packSize   = bahanData[i][COL.BAHAN.PACK] || 1;
+      foundInBahan = true;
       break;
     }
   }
 
-  // CARI DATA MONITORING DARI TAB STOCK
   for (var j = 1; j < stockData.length; j++) {
-    if (stockData[j][IDX_STOCK_NAMA] === itemName) {
-      sisaStock = stockData[j][IDX_STOCK_SISA];
-      minStok   = stockData[j][IDX_STOCK_MIN];
-      itemFoundInStock = true;
+    if (stockData[j][COL.STOCK.NAMA] === itemName) {
+      sisaStock = stockData[j][COL.STOCK.SISA];
+      minStok   = stockData[j][COL.STOCK.MIN];
+      foundInStock = true;
       break;
     }
   }
 
-  // INJEKSI DATA KE TAB PENGELUARAN
-  if (itemFoundInBahan) {
-    var hargaBersih = 0;
-    if (typeof hargaItem === 'string') {
-      hargaBersih = parseInt(hargaItem.replace(/[^\d]/g, '')) || 0;
-    } else {
-      hargaBersih = hargaItem || 0;
-    }
+  // Write Satuan & Harga
+  if (foundInBahan) {
+    var hargaBersih = (typeof hargaItem === 'string')
+      ? parseInt(hargaItem.replace(/[^\d]/g, '')) || 0
+      : hargaItem || 0;
+    var hargaPerPiece = (packSize > 0) ? (hargaBersih / packSize) : hargaBersih;
 
     shPen.getRange(row, COL_SATUAN).setValue(satuanItem);
-    shPen.getRange(row, COL_HARGA).setValue(hargaBersih);
-    shPen.getRange(row, COL_JUMLAH).setValue(1);
+    shPen.getRange(row, COL_HARGA).setValue(hargaPerPiece)
+      .setNumberFormat('"Rp "#,##0');
 
-    var cellHarga  = shPen.getRange(row, COL_HARGA).getA1Notation();
-    var cellJumlah = shPen.getRange(row, COL_JUMLAH).getA1Notation();
-    shPen.getRange(row, COL_TOTAL).setFormula("=IFERROR(" + cellHarga + "*" + cellJumlah + ", 0)");
+    // Jumlah: hanya set ke 1 jika user belum isi
+    if (!existingJumlah) {
+      shPen.getRange(row, COL_JUMLAH).setValue(1);
+    }
+
+    // Total formula
+    var cellJml = shPen.getRange(row, COL_JUMLAH).getA1Notation();
+    var cellHrg = shPen.getRange(row, COL_HARGA).getA1Notation();
+    shPen.getRange(row, 7).setFormula("=IFERROR(" + cellJml + "*" + cellHrg + ", 0)")
+      .setNumberFormat('"Rp "#,##0');
   }
-  
-  // INDIKATOR STATUS STOCK
-  if (itemFoundInStock) {
+
+  // Status Stock
+  if (foundInStock) {
     var statusMsg = "Sisa: " + sisaStock;
-    var isKritis = sisaStock <= minStok;
-    
-    shPen.getRange(row, COL_STATUS).setValue(statusMsg)
-         .setFontColor(isKritis ? "#E74C3C" : "#27AE60")
-         .setFontWeight("bold").setFontSize(10);
+    shPen.getRange(row, 8).setValue(statusMsg)
+      .setFontColor(sisaStock <= minStok ? "#E74C3C" : "#27AE60")
+      .setFontWeight("bold").setFontSize(10);
+  } else if (kategori === "Operasional") {
+    shPen.getRange(row, 8).setValue("✓ Synced")
+      .setFontColor("#888888").setFontSize(10);
   } else {
-    shPen.getRange(row, COL_STATUS).setValue("— tidak ada di Stock")
-         .setFontColor("#888888").setFontSize(10);
+    shPen.getRange(row, 8).setValue("— tidak ada di Stock")
+      .setFontColor("#888888").setFontSize(10);
   }
 }
 
@@ -427,4 +468,313 @@ function _updateStatusStok(shPen, shStk, row, namaItem, jumlahBeli) {
   // Tidak ditemukan di stock
   shPen.getRange(row, 8).setValue("— tidak ada di Stock")
     .setFontColor("#888888").setFontSize(10);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IMPORT — Data Bulan Mei (one-time migration)
+// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * Import data awal bulan Mei ke sheet Pengeluaran (67 baris).
+ * Tambah item baru ke Bahan jika belum ada.
+ * Status Stok dikosongkan — jalankan Simpan & Sync Stok setelahnya.
+ */
+function importDataMei() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var shPen = getSheet(SHEET.PENGELUARAN);
+  if (!shPen) { SpreadsheetApp.getUi().alert("Sheet Pengeluaran tidak ditemukan."); return; }
+
+  // ── Guard: cek apakah sudah pernah di-import ──
+  var lastDataRow = shPen.getLastRow();
+  // Cari baris kosong pertama (kolom A-C kosong, ignore column G yg punya formula)
+  function _firstEmptyRow() {
+    for (var er = 4; er <= 250; er++) {
+      var vals = shPen.getRange(er, 1, 1, 3).getValues()[0];
+      if (!String(vals[0]).trim() && !String(vals[1]).trim() && !String(vals[2]).trim()) return er;
+    }
+    return 251;
+  }
+  var startRow = _firstEmptyRow();
+
+  // Guard: scan data yg udah ada (bukan berdasarkan getLastRow)
+  var scanEnd = Math.min(startRow + 100, lastDataRow + 1);
+  if (scanEnd > startRow) {
+    var existing = shPen.getRange(4, 1, scanEnd - 4, 8).getValues();
+    for (var ei = 0; ei < existing.length; ei++) {
+      if (String(existing[ei][1]).trim() === "Modal Awal" &&
+          String(existing[ei][2]).trim() === "Mesin Blender") {
+        SpreadsheetApp.getUi().alert("⚠ Data Mei sudah pernah di-import.\nHapus baris lama dulu jika ingin re-import.");
+        return;
+      }
+    }
+  }
+
+  // ── 1. Tambah item baru ke Bahan sheet ──
+  _ensureBahanItems();
+
+  // ── 2. Load BahanData ──
+  var bahanMap = {};
+  getBahanData().forEach(function(row) {
+    bahanMap[String(row[COL.BAHAN.NAMA]).trim()] = {
+      kategori: row[COL.BAHAN.KATEGORI],
+      satuan:   row[COL.BAHAN.SATUAN],
+      pack:     Number(row[COL.BAHAN.PACK]) || 1,
+      hargaBel: Number(row[COL.BAHAN.HARGA_BELI]) || 0
+    };
+  });
+
+  // ── 3. Helper: ambil data Bahan ──
+  function _bahanRow(nama) {
+    var item = bahanMap[nama];
+    if (!item) return null;
+    var jml = item.pack;
+    var hrg = item.hargaBel / item.pack;
+    return ["02/05/2026", item.kategori, nama, item.satuan, jml, hrg];
+  }
+
+  // ── 4. Bangun semua baris ──
+  var tgl = "02/05/2026";
+  var rows = [];
+
+  // ── A. OPERASIONAL (4 baris) ──
+  var operasional = [
+    [tgl, "Operasional", "Sewa Tempat",      "Bulan",  1, 300000],
+    [tgl, "Operasional", "Sewa Gudang",      "Bulan",  1, 100000],
+    [tgl, "Operasional", "Listrik",          "Bulan",  1, 100000],
+    [tgl, "Operasional", "Gaji Karyawan",    "Bulan",  1, 500000],
+  ];
+
+  // ── B. MODAL AWAL (21 baris) ──
+  var modalAwal = [
+    [tgl, "Modal Awal", "Petty Cash",       "Hari",   1, 100000],
+    [tgl, "Modal Awal", "Saving Budget",    "Bulan",  1, 1000000],
+    [tgl, "Modal Awal", "Bangku Bakso",     "Pcs",    4, 41250],
+    [tgl, "Modal Awal", "Servis Kompor",    "Pcs",    1, 100000],
+    [tgl, "Modal Awal", "Servis Kabel Rol", "Pcs",    1, 50000],
+    [tgl, "Modal Awal", "Laminating Menu",  "Pcs",    2, 7500],
+    [tgl, "Modal Awal", "Mesin Blender",    "Pcs",    1, 350000],
+    [tgl, "Modal Awal", "Termos",           "Pcs",    1, 135000],
+    [tgl, "Modal Awal", "Botol Mayo",       "Pcs",    4, 10000],
+    [tgl, "Modal Awal", "Banner",           "Pcs",    1, 120000],
+    [tgl, "Modal Awal", "Servis Mesin",     "Pcs",    1, 50000],
+    [tgl, "Modal Awal", "Tempat Topping",   "Pcs",   10, 3800],
+    [tgl, "Modal Awal", "Trashbag",         "Roll",   3, 27667],
+    [tgl, "Modal Awal", "Galon + Isi",      "Pcs",    1, 50000],
+    [tgl, "Modal Awal", "Kabel 20m",        "Meter", 20, 4350],
+    [tgl, "Modal Awal", "Pisau",            "Meter",  1, 20000],
+    [tgl, "Modal Awal", "Kabel Lampu",      "Meter",  1, 50000],
+    [tgl, "Modal Awal", "Lampu 15w",        "Pcs",    1, 20000],
+    [tgl, "Modal Awal", "Lampu 50w",        "Pcs",    1, 45000],
+    [tgl, "Modal Awal", "Tambal Ban",       "Pcs",    1, 20000],
+    [tgl, "Modal Awal", "Mika Jelly",       "Pcs",   10, 1500],
+  ];
+
+  // ── C. BAHAN UTAMA (23 baris) ──
+  var bahanUtama = [
+    "Pop Ice - Chociato", "Pop Ice - Cokelat", "Pop Ice - Duren",
+    "Pop Ice - Strawberry", "Pop Ice - Alpukat", "Pop Ice - Taro",
+    "Pop Ice - Blueberry", "Pop Ice - Permen Karet", "Pop Ice - Lychee",
+    "Pop Ice - Anggur", "Pop Ice - Mangga", "Pop Ice - Melon",
+    "Pop Ice - Cappuccino", "Pop Ice - Moccacino", "Pop Ice - Vanilla Latte",
+    "Pop Ice - Cookies & Krim", "Pop Ice - Es Doger", "Pop Ice - Es Teler",
+    "Teh Celup", "Gooday", "Chocolatos", "ABC Klepon",
+    "Biji Kopi Robusta", "Biji Kopi Arabika",
+  ];
+
+  // ── D. TOPPING (6 baris) ──
+  var topping = [
+    "Keju", "Chocolate", "Chocochips", "Mesis", "Bubuk Oreo", "Boba",
+  ];
+
+  // ── E. BAHAN PENDUKUNG (6 baris) ──
+  var bahanPendukung = [
+    "Gula Pasir", "Susu SKM", "Gula Aren",
+    "Air (Galon)", "Es Batu Kristal", "Tissue",
+  ];
+
+  // ── F. KEMASAN (6 baris) ──
+  var kemasan = [
+    "Cup Plastik 18oz", "Tutup Cup Plastik",
+    "Paper Cup 8oz", "Tutup Paper Cup",
+    "Sedotan Boba", "Sedotan Biasa",
+  ];
+
+  // ── Gabungkan semua ──
+  rows = rows.concat(operasional, modalAwal);
+  bahanUtama.concat(topping, bahanPendukung, kemasan).forEach(function(nama) {
+    var r = _bahanRow(nama);
+    if (r) rows.push(r);
+  });
+
+  // ── 5. Tulis ke Sheet ──
+  var range = shPen.getRange(startRow, 1, rows.length, 6);
+  range.setValues(rows);
+
+  // Format tanggal & harga
+  shPen.getRange(startRow, 1, rows.length, 1).setNumberFormat("DD/MM/YYYY");
+  shPen.getRange(startRow, 6, rows.length, 1).setNumberFormat('"Rp "#,##0');
+
+  // Pastikan validation & format ada di baris yang ditulis
+  var endRow = startRow + rows.length - 1;
+  // Jika melebihi range pre-formatted, extend validation sampai endRow
+  if (endRow > 5000) {
+    for (var ri = startRow; ri <= endRow; ri++) {
+      _ensureEntryRow(shPen, ri);
+    }
+  }
+  // Khusus untuk PRODUCTION — extend range validation lama (203) ke range baru
+  if (endRow > 203 && !shPen.getRange(500, 2).getDataValidation()) {
+    var oldKatRule = shPen.getRange(4, 2).getDataValidation();
+    var oldDateRule = shPen.getRange(4, 1).getDataValidation();
+    var extendTo = Math.max(endRow, 5000);
+    shPen.getRange("A4:A" + extendTo).setDataValidation(oldDateRule);
+    shPen.getRange("B4:B" + extendTo).setDataValidation(oldKatRule);
+    shPen.getRange("F4:F" + extendTo).setNumberFormat('"Rp "#,##0');
+  }
+
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getUi().alert(
+    "✅ Import berhasil!\n\n" +
+    rows.length + " baris ditulis ke sheet Pengeluaran (mulai baris " + startRow + ").\n\n" +
+    "▶ Jalankan menu POS → Simpan & Sync Stok untuk sync stok bahan.");
+  auditLog("Import Data Mei", rows.length + " baris");
+}
+
+/**
+ * Tambah item baru ke sheet Bahan jika belum ada.
+ */
+function _ensureBahanItems() {
+  var shBahan = getSheet(SHEET.BAHAN);
+  if (!shBahan) return;
+
+  var newItems = [
+    ["Bahan Utama",     "Gooday",     "Piece", 10, 24000],
+    ["Bahan Utama",     "Chocolatos", "Piece", 10, 21000],
+    ["Bahan Utama",     "ABC Klepon", "Piece", 10, 20000],
+    ["Bahan Pendukung", "Tissue",     "Piece",  3, 25000],
+  ];
+
+  var existing = {};
+  var data = shBahan.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    existing[String(data[i][COL.BAHAN.NAMA]).trim()] = true;
+  }
+
+  var nextRow = data.length + 1;
+  newItems.forEach(function(item) {
+    if (existing[item[1]]) return;
+    shBahan.getRange(nextRow, 1, 1, 5).setValues([item]);
+    shBahan.getRange(nextRow, 6).setFormula("=IFERROR(E"+nextRow+"/D"+nextRow+", 0)")
+      .setNumberFormat('"Rp "#,##0');
+    var bg = nextRow % 2 === 0 ? "#F5F5F5" : "#FFFFFF";
+    shBahan.getRange(nextRow, 1, 1, 6).setBackground(bg).setFontSize(10);
+    nextRow++;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADD ROW — PENGELUARAN
+// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * Navigasi ke baris kosong berikutnya + pastikan validation ada.
+ * Alternatif lebih cepat drpd scroll manual cari baris kosong.
+ */
+function addRowPengeluaran() {
+  var sh = getSheet(SHEET.PENGELUARAN);
+  if (!sh) return;
+
+  var lastRow = sh.getLastRow();
+  var nextRow = 4;
+  // scan dari bawah ke atas buat cari baris terakhir dengan data (A-C)
+  if (lastRow >= 4) {
+    var vals = sh.getRange(4, 1, lastRow - 3, 3).getValues();
+    for (var i = vals.length - 1; i >= 0; i--) {
+      if (String(vals[i][0]).trim() || String(vals[i][1]).trim() || String(vals[i][2]).trim()) {
+        nextRow = 4 + i + 1;
+        break;
+      }
+    }
+  }
+
+  // ensure validation/formula di baris target
+  _ensureEntryRow(sh, nextRow);
+
+  sh.setActiveSelection("C" + nextRow);
+  SpreadsheetApp.getActiveSpreadsheet().toast("Baris " + nextRow + " — pilih Kategori dulu", "➕ Add Row");
+}
+
+/**
+ * Pastikan satu baris Pengeluaran punya validation & format.
+ * @param {Sheet} sh - Sheet Pengeluaran
+ * @param {number} row - Nomor baris
+ */
+function _ensureEntryRow(sh, row) {
+  if (row <= 3) return;
+
+  // Date validation
+  if (!sh.getRange(row, 1).getDataValidation()) {
+    sh.getRange(row, 1).setDataValidation(
+      SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false).build()
+    );
+    sh.getRange(row, 1).setNumberFormat("DD/MM/YYYY");
+  }
+
+  // Kategori dropdown
+  if (!sh.getRange(row, 2).getDataValidation()) {
+    sh.getRange(row, 2).setDataValidation(
+      SpreadsheetApp.newDataValidation()
+        .requireValueInList(KATEGORI_LIST_PEN, true).setAllowInvalid(false).build()
+    );
+  }
+
+  // Harga format
+  var fmt = sh.getRange(row, 6).getNumberFormat();
+  if (!fmt || fmt === "none" || fmt === "1") {
+    sh.getRange(row, 6).setNumberFormat('"Rp "#,##0');
+  }
+
+  // Kolom H — font kecil
+  sh.getRange(row, 8).setFontSize(10);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FIX — Konversi ArrayFormula G4 → per-row + bersihkan #REF!
+// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * Hapus ArrayFormula dari G4, pasang per-row formula untuk semua baris data,
+ * dan bersihkan error #REF! akibat konflik ArrayFormula vs per-row.
+ */
+function fixPengeluaranFormulas() {
+  var sh = getSheet(SHEET.PENGELUARAN);
+  if (!sh) return;
+  var ui = SpreadsheetApp.getUi();
+  if (!confirmAction("Hapus ArrayFormula di G4 dan pasang per-row formula untuk semua baris?\n#REF! akibat konflik akan otomatis hilang.", "🔧 Fix Formula?")) return;
+
+  var lastRow = sh.getLastRow();
+  var data = sh.getRange(4, 1, lastRow - 3, 3).getValues(); // A-C only
+  var fixed = 0, cleared = 0, refFixed = 0;
+
+  for (var i = 0; i < data.length; i++) {
+    var r = i + 4;
+    var cellG = sh.getRange(r, 7);
+    var formula = cellG.getFormula();
+    var isArray = formula && formula.indexOf("ARRAYFORMULA") >= 0;
+    var isRef = cellG.getValue() === "#REF!";
+
+    if (isArray) {
+      // Ganti ArrayFormula → per-row
+      cellG.setFormula("=IF(E" + r + "*F" + r + "=0,\"\",E" + r + "*F" + r + ")").setNumberFormat('"Rp "#,##0');
+      cleared++;
+    } else if (isRef) {
+      // #REF! dari konflik — re-set formula
+      cellG.setFormula("=IF(E" + r + "*F" + r + "=0,\"\",E" + r + "*F" + r + ")").setNumberFormat('"Rp "#,##0');
+      refFixed++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  ui.alert("✅ Selesai!\n\n" +
+    "ArrayFormula dihapus: " + cleared + "\n" +
+    "#REF! diperbaiki: " + refFixed + "\n" +
+    "Semua data pake per-row formula.");
+  auditLog("Fix Pengeluaran Formulas", cleared + " cleared, " + refFixed + " refFixed");
 }

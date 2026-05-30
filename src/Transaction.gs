@@ -194,21 +194,17 @@ function simpanTransaksi() {
         var namaBahanStock = stockData[s][PC.NAMA];
         if (kebutuhanBahan[namaBahanStock]) {
           var terjualAwal = parseFloat(stockData[s][PC.TERJUAL]) || 0;
-          var sisaAwal = parseFloat(stockData[s][PC.SISA]) || parseFloat(stockData[s][PC.STOK_AWAL]) || 0;
           stockRows.push({
             row: s + 1,
-            terjual: terjualAwal + kebutuhanBahan[namaBahanStock],
-            sisa: sisaAwal - kebutuhanBahan[namaBahanStock]
+            terjual: terjualAwal + kebutuhanBahan[namaBahanStock]
           });
         }
       }
-      // Batch write stock updates
+      // Batch write stock updates — only Terjual (E), Sisa Stok (F) auto-calc via formula
       if (stockRows.length > 0) {
-      // Write stock updates individually (rows may be non-contiguous)
       for (var si = 0; si < stockRows.length; si++) {
         var sr = stockRows[si].row;
         shStock.getRange(sr, COLx(PC.TERJUAL)).setValue(stockRows[si].terjual);
-        shStock.getRange(sr, COLx(PC.SISA)).setValue(stockRows[si].sisa);
       }
       }
     }
@@ -318,23 +314,14 @@ function stockEngineBOM(shPOS) {
         qtyDeduction = UnitConverter.toBase(qtyDeduction, unitStok);
       }
       var terjualAwal = parseFloat(stockData[s][PC.TERJUAL]) || 0;
-      var sisaAwal = parseFloat(stockData[s][PC.SISA]) || parseFloat(stockData[s][PC.STOK_AWAL]) || 0;
-      stockRows.push({ row: s + 1, terjual: terjualAwal + qtyDeduction, sisa: sisaAwal - qtyDeduction });
-      stockData[s][PC.SISA] = sisaAwal - qtyDeduction;
+      stockRows.push({ row: s + 1, terjual: terjualAwal + qtyDeduction });
     }
   }
-  // Batch write stock updates
+  // Batch write stock updates — only Terjual (E), Sisa Stok (F) auto-calc via formula
   if (stockRows.length > 0) {
-    var terjualRange = shStock.getRange(stockRows[0].row, COLx(PC.TERJUAL), stockRows.length, 1);
-    var sisaRange = shStock.getRange(stockRows[0].row, COLx(PC.SISA), stockRows.length, 1);
-    var terjualData = [];
-    var sisaData = [];
     for (var si = 0; si < stockRows.length; si++) {
-      terjualData.push([stockRows[si].terjual]);
-      sisaData.push([stockRows[si].sisa]);
+      shStock.getRange(stockRows[si].row, COLx(PC.TERJUAL)).setValue(stockRows[si].terjual);
     }
-    terjualRange.setValues(terjualData);
-    sisaRange.setValues(sisaData);
   }
   timeEnd("stockEngineBOM");
 }

@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.1.0] — 2026-05-30
+
+### Enterprise Inventory Overhaul
+
+- **Stok Awal → Stok Masuk (kumulatif)** — Kolom D sekarang mencatat total kumulatif barang yang masuk (initial + semua pembelian). Tidak lagi statis.
+- **Sisa Stok = Formula `=D-E`** — Tidak lagi diisi manual. Stok Masuk minus Terjual = selalu konsisten. Siap audit.
+
+### Fixed
+
+- **`#REF!` di Pengeluaran** — ArrayFormula di G4 bertabrakan dengan formula per-row dari import. Kembali ke batch per-row formulas (5000 baris, 1 API call via `setFormulas()`).
+- **`onEditPengeluaran()` multi-row paste** — Sebelumnya cuma handle single-cell edit di kolom C. Copy-paste 13 baris → trigger skip karena `col !== COL_NAMA_ITEM`. Sekarang deteksi range A-E, iterate per row, auto-fill tanpa overwrite Jumlah (E).
+- **Jumlah (E) tidak dioverwrite** — Auto-fill sekarang hanya isi Jumlah ke 1 jika cell benar-benar kosong. Data paste dipertahankan.
+- **`simpanPengeluaran()` optimized** — Scan cari baris data beneran (skip 5000 baris formula kosong).
+
+### Added
+
+- **➕ Add Row Pengeluaran** — Menu POS → navigasi ke baris kosong berikutnya + pastikan validation ada.
+- **🔧 Fix Formula Total (atasi #REF!)** — Hapus ArrayFormula G4, ganti per-row, bersihin error sisa.
+- **📦 Migrasi Stok (Stok Awal → Stok Masuk)** — Back-calculate `Stok Masuk = Sisa + Terjual` untuk data existing. Ubah Sisa Stok jadi formula.
+
+### Changed
+
+- **`buildPengeluaran()`** — Validation & formula dibentang ke 5000 rows (dari 200). E2:H2 info "Menu POS → Add Row Pengeluaran".
+- **`simpanPengeluaran()`** — Update **D (Stok Masuk)** bukan F (Sisa). Baris baru: Sisa = formula D-E.
+- **`simpanTransaksi()` + `stockEngineBOM()`** — Update **E (Terjual)** saja. Sisa Stok auto-calc via formula.
+- **`onEditPengeluaran()`** — Rewrite: deteksi multi-col range, `_autoFillPengeluaranRow()` helper, kategori optional.
+
+### Documentation
+
+- **README.md** — Updated Stock description, menu table (+3 items)
+- **DOKUMENTASI.md** — Updated Stock columns (Stok Masuk, Sisa = formula), Pengeluaran build specs
+- **AGENTS.md** — Added Step 20-22 sessions, updated progress
+
 ## [1.0.1] — 2026-05-29
 
 ### Fixed

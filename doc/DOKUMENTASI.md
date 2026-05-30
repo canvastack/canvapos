@@ -112,11 +112,13 @@ src/
 | A | Kategori | String | Kategori bahan |
 | B | Nama Bahan | String | Nama bahan (key) |
 | C | Satuan | String | Satuan stok |
-| D | Stok Awal | Number | Stok awal (0 — diisi via Pengeluaran) |
-| E | Terjual | Number | Terpotong oleh transaksi (dari stockEngineBOM) |
-| F | Sisa Stok | Number | Dikirim manual atau dari Pengeluaran sync |
-| G | Min. Stok | Number | Batas minimal untuk restock alert |
+| D | Stok Masuk | Number | **Kumulatif** — initial + semua pembelian via Pengeluaran |
+| E | Terjual | Number | Terpotong oleh transaksi (dari BOM engine) |
+| F | Sisa Stok | **Formula** | **`=IF(D=0,"",D-E)`** — auto, tidak bisa diedit manual |
+| G | Min. Stok | Number | Batas minimal reorder point (restock alert) |
 | H | Status | Formula | `⚠ RESTOCK` atau `✓ OK` (conditional formatting) |
+
+> **Perubahan penting v1.1:** Kolom D berubah dari "Stok Awal" (statis) menjadi "Stok Masuk" (kumulatif). Kolom F sekarang formula, bukan value. Ini memastikan `Sisa Stok = Stok Masuk − Terjual` selalu konsisten dan audit-ready.
 
 ### 2.4 Sheet Transaksi
 
@@ -341,7 +343,7 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 - **Tab color:** Blue (#2E86AB)
 - **Frozen rows:** 1
 - **Data:** 40 baris bahan baku (baris 2-41)
-- **Data source:** `getBahanData()` di `src/data/BahanData.gs`
+- **Data source:** `getBahanData()` di `src/data/BahanData.gs` (40+ item)
 - **Column widths:** 100, 200, 100, 80, 120, 140
 
 ### 5.2 Resep (Build: `buildResep`)
@@ -359,6 +361,8 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 - **Tab color:** Green (#27AE60)
 - **Frozen rows:** 1
 - **Data:** Dinamis, diisi via Pengeluaran sync atau manual
+- **Sisa Stok:** Formula `=IF(D=0,"",D-E)` — auto, tidak bisa diedit manual
+- **Stok Masuk:** Kumulatif — bertambah tiap pembelian via Pengeluaran
 - **Conditional formatting:** 2 rules (RESTOCK = merah, OK = hijau)
 - **Min. Stok default:** 1 untuk item baru
 
@@ -400,9 +404,10 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 
 - **Tab color:** Orange (#E67E22)
 - **Frozen rows:** 3
-- **Dropdown kategori:** 200 baris (6 kategori)
-- **Formula total:** 200 baris (E×F)
-- **Data validation:** Date picker di kolom A (allow invalid)
+- **Row 2 info:** "Menu POS → Add Row Pengeluaran untuk navigasi baris baru + validation otomatis"
+- **Dropdown kategori:** 5000 baris (6 kategori: Bahan Utama, Topping, Kemasan, Bahan Pendukung, Operasional, Modal Awal, Lain-lain)
+- **Formula total:** 5000 baris (batch `setFormulas()` — per-row `=IF(E×F=0,"",E×F)`, bukan ArrayFormula)
+- **Data validation:** Date picker di kolom A (allow invalid), extended ke 5000 baris
 - **Column widths:** 110, 130, 180, 90, 80, 130, 130, 120
 
 ### 5.8 Kas (Build: `buildKas`)
@@ -494,14 +499,16 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 
 **Flow:**
 
-1. Baca data Pengeluaran baris 4+
+1. Baca data Pengeluaran baris 4+ (scan dari bawah cari baris data beneran)
 2. Filter: skip baris kosong, skip yang sudah `✓ Synced`
 3. Validasi unit consistency (P2.5)
 4. Untuk tiap baris valid:
-   - Konversi satuan dari Bahan (`jumlah × packSize`)
-   - Cari item di Stock: update atau insert baris baru
+   - Cari item di Stock: update **D (Stok Masuk, kumulatif)** atau insert baris baru
+   - Baris baru: Stok Masuk = qty, Sisa = formula `=D-E`
    - Tandai kolom H: `✓ Synced`
 5. Panggil `refreshLaporan()` + `refreshNamedRanges()`
+
+> **v1.1 change:** Sebelumnya update kolom F (Sisa Stok). Sekarang update D (Stok Masuk) — Sisa Stok auto-calc via formula `=D-E`.
 
 ### 6.7 `deleteRowPOS()` — `src/POS.gs`
 
@@ -615,7 +622,7 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 
 ### 7.1 `onOpen()` — Custom Menu
 
-Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan 26 item:
+Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan 30 item:
 
 ```
 💾 Simpan Transaksi
@@ -627,6 +634,8 @@ Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan
 ↩ Restore POS dari Backup
 ──────────
 💸 Simpan & Sync Stok (Pengeluaran)
+➕ Add Row Pengeluaran
+🔧 Fix Formula Total (atasi #REF!)
 💸 Sinkronisasi Dropdown Pengeluaran
 🔄 Refresh Laporan Pendapatan
 📊 Refresh Dashboard
@@ -634,6 +643,7 @@ Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan
 🗑 Hapus Baris Aktif (POS)
 ──────────
 ➕ Tambah Resep / BOM
+🔄 Sync Data Resep
 ──────────
 💰 Top Up PC ke Rp 100.000
 🛒 Top Up UB (jika < Rp 10.000)
@@ -646,9 +656,12 @@ Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan
 ──────────
 📀 Backup Sekarang
 ⏰ Atur Backup Otomatis
+📂 Lihat Backup
+♻ Restore dari Backup
 ──────────
 🚀 Onboarding Wizard
 ──────────
+📦 Migrasi Stok (Awal → Masuk)
 🏷️ Refresh Named Ranges
 ──────────
 🌐 Set Environment…
@@ -673,8 +686,10 @@ Juga menjalankan: `cleanAuditLog()`, `cleanBackups()`, `refreshDashboard()`.
 
 | Kolom | Trigger | Aksi |
 |---|---|---|
-| B (Kategori) | Change | Update dropdown Nama Item via `_updateNamaItemDropdown()` |
-| C (Nama Item) | Change | Auto-fill Satuan, Harga, Jumlah=1, Total formula, Status Stok |
+| B (Kategori) | Change — single row | Update dropdown Nama Item via `_updateNamaItemDropdown()` |
+| C (Nama Item) | Change — **single atau multi row (copy-paste)** | Auto-fill Satuan, Harga per Unit, Total formula, Status Stok. **Jumlah (E) tidak dioverwrite** jika sudah terisi. Multi-row: iterate per baris via `_autoFillPengeluaranRow()`. |
+
+> **Multi-row paste:** Sejak v1.1, `onEditPengeluaran` mendeteksi range yang mencakup kolom C meskipun edit terjadi di kolom A/B. Untuk tiap baris dengan Nama Item terisi, auto-fill dijalankan tanpa mengubah Jumlah yang sudah di-paste.
 
 ### 7.4 `_updateNamaItemDropdown(ss, shPen, row)`
 
@@ -789,7 +804,9 @@ totalHPP   = hppProduk + hppTopping
 **Input:** Data POS (varian, qty, topping)
 **Process:** Cocokkan dengan Resep → agregat kebutuhan bahan
 **Unit handling:** Normalisasi via UnitConverter (Kg↔Gram, Liter↔ml)
-**Output:** Batch update Stock (kolom Terjual + Sisa Stok)
+**Output:** Batch update Stock — **hanya kolom E (Terjual)**. Sisa Stok (F) auto-calc via formula `=D-E`.
+
+> **v1.1 change:** Sebelumnya update Terjual + Sisa Stok. Sekarang Sisa Stok formula — hanya Terjual yang di-update.
 
 ---
 
