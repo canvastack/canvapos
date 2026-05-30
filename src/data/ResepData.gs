@@ -45,6 +45,13 @@ function generateBOMData() {
     ["Tutup Cup Plastik",1,"Piece"],["Sedotan Biasa",1,"Piece"]
   ]);
 
+  // ── NEW POWDER DRINKS (sama format seperti Pop Ice) ──────────────────
+  var NEW_POWDER = ["Gooday", "Chocolatos", "ABC Klepon", "Es Teh Celup"];
+  NEW_POWDER.forEach(function(item) {
+    data.push([item, item, 1, "Piece"]);
+    POP_ICE_TEMPLATE.forEach(function(t) { data.push([item, t[0], t[1], t[2]]); });
+  });
+
   // ── TOPPINGS ────────────────────────────────────────────────────────────
   addBOM("Keju",       [["Keju",15,"Gram"]]);
   addBOM("Chocolate",  [["Chocolate",15,"Gram"]]);
