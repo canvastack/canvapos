@@ -45,6 +45,7 @@ function getBahanData() {
     ["Bahan Pendukung","Tissue",          "Piece",  3, 25000],
     // ── Kemasan ────────────────────────────────────────────────────
     ["Kemasan","Cup Plastik 18oz",     "Piece",  50, 25000],
+    ["Kemasan","Cup Plastik 22oz",     "Piece",  50, 30000],
     ["Kemasan","Tutup Cup Plastik",    "Piece",  50,  5000],
     ["Kemasan","Paper Cup 8oz",        "Piece",  50, 25000],
     ["Kemasan","Tutup Paper Cup",      "Piece",  50,  5000],

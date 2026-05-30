@@ -14,7 +14,7 @@ function generateBOMData() {
   ];
   var POP_ICE_TEMPLATE = [
     ["Gula Pasir",20,"Gram"],["Susu SKM",5,"Gram"],
-    ["Air (Galon)",0.15,"Liter"],["Es Batu Kristal",0.2,"Kg"],
+    ["Air (Galon)",0.15,"Liter"],["Es Batu Kristal",0.23,"Kg"],
     ["Cup Plastik 18oz",1,"Piece"],["Tutup Cup Plastik",1,"Piece"],
     ["Sedotan Biasa",1,"Piece"]
   ];
@@ -40,17 +40,34 @@ function generateBOMData() {
     ["Tutup Paper Cup",1,"Piece"],["Sedotan Biasa",1,"Piece"]
   ]);
   addBOM("Es Teh Original", [
-    ["Teh Celup",1,"Piece"],["Gula Pasir",20,"Gram"],
-    ["Es Batu Kristal",0.2,"Kg"],["Cup Plastik 18oz",1,"Piece"],
-    ["Tutup Cup Plastik",1,"Piece"],["Sedotan Biasa",1,"Piece"]
+    ["Teh Celup",1,"Piece"],["Gula Pasir",70,"Gram"],
+    ["Air (Galon)",0.15,"Liter"],["Es Batu Kristal",0.23,"Kg"],
+    ["Cup Plastik 22oz",1,"Piece"],["Tutup Cup Plastik",1,"Piece"],
+    ["Sedotan Biasa",1,"Piece"]
   ]);
 
   // ── NEW POWDER DRINKS (sama format seperti Pop Ice) ──────────────────
-  var NEW_POWDER = ["Gooday", "Chocolatos", "ABC Klepon", "Es Teh Celup"];
+  var NEW_POWDER = ["Gooday", "Chocolatos", "ABC Klepon"];
   NEW_POWDER.forEach(function(item) {
     data.push([item, item, 1, "Piece"]);
     POP_ICE_TEMPLATE.forEach(function(t) { data.push([item, t[0], t[1], t[2]]); });
   });
+
+  // ── TEH TARIK (tanpa es, hot) ─────────────────────────────────────────
+  addBOM("Teh Tarik", [
+    ["Teh Celup",1,"Piece"],["Gula Pasir",60,"Gram"],
+    ["Susu SKM",25,"Gram"],["Air (Galon)",0.2,"Liter"],
+    ["Cup Plastik 18oz",1,"Piece"],["Tutup Cup Plastik",1,"Piece"],
+    ["Sedotan Biasa",1,"Piece"]
+  ]);
+
+  // ── ES TEH TARIK (dengan es) ─────────────────────────────────────────
+  addBOM("Es Teh Tarik", [
+    ["Teh Celup",1,"Piece"],["Gula Pasir",80,"Gram"],
+    ["Susu SKM",30,"Gram"],["Air (Galon)",0.15,"Liter"],
+    ["Es Batu Kristal",0.23,"Kg"],["Cup Plastik 22oz",1,"Piece"],
+    ["Tutup Cup Plastik",1,"Piece"],["Sedotan Biasa",1,"Piece"]
+  ]);
 
   // ── TOPPINGS ────────────────────────────────────────────────────────────
   addBOM("Keju",       [["Keju",15,"Gram"]]);
