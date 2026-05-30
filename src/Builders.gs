@@ -212,6 +212,15 @@ function syncResepData() {
   if (lastRow > data.length + 1) {
     sh.getRange(data.length + 2, 1, lastRow - data.length - 1, 6).clearContent();
   }
+  // Apply formula columns (E-F) for all data rows
+  data.forEach(function(_, i) {
+    var r = i + 2;
+    applyZebraRow(sh, r, i, 6);
+    sh.getRange(r, 5).setFormula(F("=IFERROR(VLOOKUP(B{row}, BAHAN_Lookup, 5, FALSE), 0)", {row: r}));
+    sh.getRange(r, 6).setFormula(F("=IFERROR(C{row}*E{row}, 0)", {row: r}));
+    sh.getRange(r, 5, 1, 2).setNumberFormat('"Rp "#,##0');
+    sh.getRange(r, 3).setNumberFormat("#,##0.00");
+  });
   // Re-add ringkasan HPP
   _addResepSummary(sh, C, data.length);
 }
