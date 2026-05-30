@@ -106,7 +106,15 @@ function onEdit(e) {
   }
 
   if (shName === "Resep") {
+    clearDynamicCache();
     clearHPPLookupCache();
+    syncDropdownPOS();
+    return;
+  }
+
+  if (shName === "Stock") {
+    clearDynamicCache();
+    syncDropdownPOS();
     return;
   }
 

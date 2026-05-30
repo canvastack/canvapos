@@ -32,19 +32,64 @@ function getDynamicList(kategori) {
  */
 function getVarianList() {
   if (CACHED_VARIAN_LIST) return CACHED_VARIAN_LIST;
-  var sh = getSheet(SHEET.RESEP);
-  if (!sh) { CACHED_VARIAN_LIST = ["-"]; return CACHED_VARIAN_LIST; }
-  var data = sh.getDataRange().getValues();
-  var seen = {};
-  var list = [];
-  var TOPPINGS = ["Keju","Chocolate","Chocochips","Mesis","Bubuk Oreo","Boba"];
-  for (var i = 1; i < data.length; i++) {
-    var name = String(data[i][0]).trim();
-    if (name && !seen[name] && TOPPINGS.indexOf(name) < 0) {
-      seen[name] = true;
-      list.push(name);
+
+  var shResep = getSheet(SHEET.RESEP);
+  if (!shResep) { CACHED_VARIAN_LIST = ["-"]; return CACHED_VARIAN_LIST; }
+
+  var resepData = shResep.getDataRange().getValues();
+  var TOPPINGS = getToppingList();
+  var PS = COL.STOCK, PR = COL.RESEP;
+
+  // Bangun stock map: { "Gula Pasir": 500, ... }
+  var shStock = getSheet(SHEET.STOCK);
+  var stockMap = {};
+  if (shStock) {
+    var stockData = shStock.getDataRange().getValues();
+    for (var si = 1; si < stockData.length; si++) {
+      var nama = String(stockData[si][PS.NAMA]).trim();
+      var sisa = Number(stockData[si][PS.SISA]) || 0;
+      if (nama) stockMap[nama] = sisa;
     }
   }
+
+  // Bangun BOM map: { "Pop Ice - Cokelat": [["Gula Pasir",20], ...], ... }
+  var bomMap = {};
+  for (var ri = 1; ri < resepData.length; ri++) {
+    var menu = String(resepData[ri][PR.MENU]).trim();
+    var bahan = String(resepData[ri][PR.BAHAN]).trim();
+    var takaran = Number(resepData[ri][PR.TAKARAN]) || 0;
+    if (!menu || !bahan) continue;
+    if (!bomMap[menu]) bomMap[menu] = [];
+    bomMap[menu].push([bahan, takaran]);
+  }
+
+  // Kumpulin menu unik, filter topping + stock
+  var seen = {};
+  var list = [];
+  for (var i = 1; i < resepData.length; i++) {
+    var name = String(resepData[i][PR.MENU]).trim();
+    if (!name || seen[name]) continue;
+    seen[name] = true;
+    if (TOPPINGS.indexOf(name) >= 0) continue;
+
+    // Cek kecukupan stock buat varian ini
+    var bomItems = bomMap[name];
+    var stockCukup = true;
+    if (bomItems && shStock) {
+      for (var bi = 0; bi < bomItems.length; bi++) {
+        var bahan = bomItems[bi][0];
+        var perlu = bomItems[bi][1];
+        var sedia = stockMap[bahan] || 0;
+        if (sedia < perlu) {
+          stockCukup = false;
+          break;
+        }
+      }
+    }
+
+    if (stockCukup) list.push(name);
+  }
+
   CACHED_VARIAN_LIST = list.length > 0 ? list : ["-"];
   return CACHED_VARIAN_LIST;
 }
