@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.2.0] — 2026-05-30
+
+### Added — Stock-Aware POS Dropdown
+
+- **`getVarianList()` rewrite** — Sekarang baca Stock + Resep + Bahan tiap kali trigger. Filter varian yang salah satu BOM ingredient-nya punya sisa stok < qty per sajian.
+  - Bangun `stockMap` dari Stock (Nama → Sisa)
+  - Bangun `bomMap` dari Resep (Menu → [[Bahan, Takaran], ...])
+  - Cek tiap varian: kalo `stockMap[bahan] < takaran` untuk **satu saja** ingredient → varian skip dari dropdown
+  - Fail-open: kalo Stock sheet error, semua varian tetap muncul
+- **`getVarianList()` → TOPPINGS**: Ganti dari hardcoded array (`["Keju","Chocolate",...]`) ke `getToppingList()` yang dinamis dari Bahan
+
+### Changed
+
+- **`onEdit()` → Resep**: Sekarang trigger `clearDynamicCache()` + `syncDropdownPOS()` (dulu cuma `clearHPPLookupCache()`)
+- **`onEdit()` → Stock**: Trigger baru → `clearDynamicCache()` + `syncDropdownPOS()`
+
+### Cascade Flow
+
+```
+Edit Stock/Bahan/Resep → onEdit() → clearDynamicCache()
+→ syncDropdownPOS() → getVarianList() → filter stok
+→ setDataValidation() di POS kolom B
+```
+
 ## [1.1.0] — 2026-05-30
 
 ### Enterprise Inventory Overhaul

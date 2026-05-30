@@ -162,7 +162,7 @@ src/
 | Kolom | Header | Tipe | Deskripsi |
 |---|---|---|---|
 | A | No | Number (formula) | Nomor urut otomatis |
-| B | Product Variant | Dropdown | Dari getVarianList() (sumber: Resep) |
+| B | Product Variant | Dropdown | Dari `getVarianList()` (sumber: Resep). **Otomatis filter stok** — varian dengan stok bahan < qty BOM otomatis tidak muncul. Fail-open jika Stock error. |
 | C | Jumlah Cup | Number | Default 1 |
 | D | Topping - Jenis | String | Manual atau dari pilihTopping() |
 | E | Topping - Jumlah | Formula | Hitung dari koma di D via COUNTA/SPLIT |
@@ -612,7 +612,7 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 
 | Fungsi | Deskripsi |
 |---|---|
-| `syncDropdownPOS()` | Refresh dropdown varian di POS dari Resep |
+| `syncDropdownPOS()` | Refresh dropdown varian di POS dari Resep. **Stock-aware** — varian dengan BOM ingredient stok < qty per sajian otomatis di-exclude. Trigger: edit Bahan/Resep/Stock. |
 | `syncDropdownPengeluaran()` | Refresh dropdown item di Pengeluaran dari Stock |
 | `setupOnEditTrigger()` | Install trigger onEdit (anti-duplicate) |
 
@@ -676,9 +676,10 @@ Juga menjalankan: `cleanAuditLog()`, `cleanBackups()`, `refreshDashboard()`.
 **Routing:**
 
 | Sheet | Aksi |
-|---|---|
+|---|---|---|
 | Bahan | `clearDynamicCache()` + `clearHPPLookupCache()` + `syncDropdownPOS()` |
-| Resep | `clearHPPLookupCache()` |
+| Resep | `clearDynamicCache()` + `clearHPPLookupCache()` + `syncDropdownPOS()` |
+| Stock | `clearDynamicCache()` + `syncDropdownPOS()` |
 | Pengeluaran | `onEditPengeluaran(e)` |
 | POS | Auto-fix Grand Total jika ada baris dihapus manual |
 

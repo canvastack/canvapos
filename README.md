@@ -4,7 +4,7 @@
 
 ## Fitur
 
-- **POS Entry** — Input pesanan dengan dropdown varian, jumlah cup, dan topping
+- **POS Entry** — Input pesanan dengan dropdown varian yang cerdas: produk dengan stok bahan tidak mencukupi otomatis tidak muncul di dropdown
 - **Hitung Otomatis** — Harga base (Rp 5.000) + topping (Rp 1.000/jenis) terhitung real-time
 - **Transaksi Log** — Setiap pesanan tersimpan dengan timestamp, kasir, dan detail lengkap
 - **Manajemen Stok** — Stok bahan terpotong otomatis berdasarkan BOM setiap transaksi
