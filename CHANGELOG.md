@@ -10,6 +10,7 @@
   - Cek tiap varian: kalo `stockMap[bahan] < takaran` untuk **satu saja** ingredient → varian skip dari dropdown
   - Fail-open: kalo Stock sheet error, semua varian tetap muncul
 - **`getVarianList()` → TOPPINGS**: Ganti dari hardcoded array (`["Keju","Chocolate",...]`) ke `getToppingList()` yang dinamis dari Bahan
+- **BOM baru**: Gooday, Chocolatos, ABC Klepon, Es Teh Celup — resep sama seperti Pop Ice (1 sachet + gula + SKM + air + es + cup + tutup + sedotan)
 
 ### Changed
 
