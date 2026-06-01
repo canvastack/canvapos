@@ -23,7 +23,7 @@ function setupPOS(env) {
   deleteSheetIfExists(ss, tempName);
   ss.insertSheet(tempName);
 
-  ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Audit","Sheet1"].forEach(function(n) {
+  ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Audit","Aset","Sheet1"].forEach(function(n) {
     deleteSheetIfExists(ss, n);
   });
 
