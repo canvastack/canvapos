@@ -8,6 +8,16 @@ var HPP_PER_CUP   = 2200;
 var HPP_PER_TOP   = 80;
 var POS_START_ROW = 7;
 var POS_INIT_ROWS = 5;
+var PAJAK_PERSEN  = 0; // Default 0% UMKM, bisa diubah manual
+
+// ── Mapping HPP kategori ke Bahan kategori ──────────────────────────────
+var KATEGORI_HPP = ["Bahan Utama", "Topping", "Bahan Pendukung", "Kemasan"];
+var KATEGORI_HPP_MAP = {
+  "Bahan Utama": "Bahan Utama",
+  "Topping": "Topping",
+  "Bahan Pendukung": "Bahan Pendukung",
+  "Kemasan": "Kemasan"
+};
 
 // ── Column Index Constants ────────────────────────────────────────────────
 // 0-based = index dalam array data hasil getValues()
@@ -20,7 +30,8 @@ var COL = {
   STOCK:       { KATEGORI:0, NAMA:1, SATUAN:2, STOK_AWAL:3, TERJUAL:4, SISA:5, MIN:6, STATUS:7 },
   PENGELUARAN: { TGL:0, KATEGORI:1, NAMA:2, SATUAN:3, JUMLAH:4, HARGA:5, TOTAL:6, STATUS:7 },
   KAS:         { TGL:0, KATEGORI:1, JENIS:2, KET:3, JUMLAH:4, SALDO:5 },
-  PENDAPATAN:  { LABEL:0, TRX:1, CUP:2, PENDAPATAN:3, HPP:4, LABA:5 },
+  PENDAPATAN:  { LABEL:0, TRX:1, CUP:2, REVENUE:3, HPP_BAHAN:4, HPP_TOPPING:5, HPP_SUPPORT:6, HPP_KEMASAN:7, GROSS_PROFIT:8, OPEX:9, EBITDA:10, DEPRESIASI:11, EBIT:12, PAJAK:13, NET_PROFIT:14 },
+  ASET:        { NAMA:0, KATEGORI:1, TGL_BELI:2, HARGA:3, UMUR:4, RESIDU:5, DEPRESIASI_BLN:6, AKUMULASI:7, NILAI_BUKU:8 },
 };
 
 /**
@@ -41,7 +52,8 @@ var SHEET = {
   BAHAN:       "Bahan",
   RESEP:       "Resep",
   KAS:         "Kas",
-  AUDIT:       "Audit"
+  AUDIT:       "Audit",
+  ASET:        "Aset"
 };
 
 /**

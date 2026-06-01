@@ -109,6 +109,8 @@ function getToppingList() {
 function clearDynamicCache() {
   CACHED_VARIAN_LIST = null;
   CACHED_TOPPING_LIST = null;
+  clearHPPLookupCache();
+  PropertiesService.getDocumentProperties().deleteProperty("HPP_CAT_CACHE");
 }
 
 // ── Unit Converter (Weight & Volume) ──────────────────────────────────────
@@ -168,6 +170,40 @@ var UnitConverter = {
     return qty * this._factor(unit);
   }
 };
+
+// ── Bahan Category & Price Maps ─────────────────────────────────────────
+/**
+ * Dapatkan kategori HPP untuk suatu nama bahan.
+ * @param {string} bahanName - Nama bahan
+ * @return {string} Kategori HPP ("Bahan Utama", "Topping", "Bahan Pendukung", "Kemasan", atau "Lain-lain")
+ */
+function getCategoryForBahan(bahanName) {
+  var data = getBahanData();
+  for (var i = 0; i < data.length; i++) {
+    if (data[i][COL.BAHAN.NAMA] === bahanName) {
+      var kat = data[i][COL.BAHAN.KATEGORI];
+      return KATEGORI_HPP_MAP[kat] || "Lain-lain";
+    }
+  }
+  return "Lain-lain";
+}
+
+/**
+ * Dapatkan map harga per satuan semua bahan.
+ * @return {Object} { "Gula Pasir": 20, "Cup Plastik 18oz": 500, ... }
+ */
+function getBahanHargaMap() {
+  var sh = getSheet(SHEET.BAHAN);
+  if (!sh) return {};
+  var data = sh.getDataRange().getValues();
+  var map = {};
+  for (var i = 1; i < data.length; i++) {
+    var nama = String(data[i][COL.BAHAN.NAMA]).trim();
+    var harga = Number(data[i][COL.BAHAN.HARGA_PIECE]) || 0;
+    if (nama) map[nama] = harga;
+  }
+  return map;
+}
 
 // ── Performance Timer ────────────────────────────────────────────────────────
 var _timers = {};

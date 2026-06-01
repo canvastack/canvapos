@@ -37,13 +37,14 @@ function setupPOS(env) {
   buildPengeluaran(ss); SpreadsheetApp.flush();
   buildKas(ss);         SpreadsheetApp.flush();
   buildAudit(ss);       SpreadsheetApp.flush();
+  buildAset(ss);        SpreadsheetApp.flush();
   buildPendapatan(ss);  SpreadsheetApp.flush();
   buildPOS(ss);         SpreadsheetApp.flush();
   buildPanduan(ss);     SpreadsheetApp.flush();
 
   deleteSheetIfExists(ss, tempName);
 
-  var order = ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Audit"];
+  var order = ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Aset","Audit"];
   order.forEach(function(name, i) {
     var sh = ss.getSheetByName(name);
     if (sh) { ss.setActiveSheet(sh); ss.moveActiveSheet(i + 1); }
