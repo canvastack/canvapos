@@ -202,3 +202,170 @@ function postingDepresiasi() {
     refreshLaporan();
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MIGRATION — Sync Modal Awal from Pengeluaran to Aset + Kas
+// ═══════════════════════════════════════════════════════════════════════════
+/**
+ * Sync data Modal Awal dari Pengeluaran ke Aset (14 aset tetap) + Kas (PC 100rb / UB 1jt).
+ * Satu kali jalan — guard mencegah re-run.
+ */
+function syncModalAwalKeAsetDanKas() {
+  if (!confirmAction(
+    "🔄 Sync Modal Awal → Aset + Kas\n\n" +
+    "• 14 item aset tetap → sheet Aset (dengan penyusutan)\n" +
+    "• Petty Cash Rp 100.000 → Kas (PC)\n" +
+    "• Saving Budget Rp 1.000.000 → Kas (UB)\n" +
+    "• 6 item biaya (Servis, Trashbag) → Rekategori Operasional\n" +
+    "• Galon + Isi → split: Galon (Aset 40rb) + Air Isi (OPEX 10rb)\n\n" +
+    "Lanjutkan?", "🔄 Sync Modal Awal?"
+  )) return;
+
+  withLock(60000, function() {
+    var shPen = getSheet(SHEET.PENGELUARAN);
+    var shAset = getSheet(SHEET.ASET);
+    var shKas = getSheet(SHEET.KAS);
+    var C = getC();
+    var CA = COL.ASET;
+
+    if (!shPen || !shAset || !shKas) {
+      notify("Sheet Pengeluaran / Aset / Kas tidak lengkap.", true);
+      return;
+    }
+
+    // ── 1. Guard: cek apakah sudah pernah sync ──
+    var lastPen = shPen.getLastRow();
+    if (lastPen < 4) { notify("Tidak ada data Pengeluaran.", true); return; }
+    var penData = shPen.getRange(4, 1, lastPen - 3, 8).getValues();
+    for (var i = 0; i < penData.length; i++) {
+      if (String(penData[i][1]).trim() === "Modal Awal" &&
+          String(penData[i][7]).trim() !== "") {
+        notify("✅ Data Modal Awal sudah pernah di-sync. Lewati.");
+        return;
+      }
+    }
+
+    // ── 2. Mapping ──
+    var ASSET_MAP = {
+      "Mesin Blender":     {k:"Peralatan", u:24, h:350000},
+      "Termos":            {k:"Peralatan", u:12, h:135000},
+      "Bangku Bakso":      {k:"Furniture", u:24, h:165000},
+      "Banner":            {k:"Renovasi",  u:12, h:120000},
+      "Kabel 20m":         {k:"Elektronik",u:12, h:87000},
+      "Kabel Lampu":       {k:"Elektronik",u:12, h:50000},
+      "Lampu 15w":         {k:"Elektronik",u:12, h:20000},
+      "Lampu 50w":         {k:"Elektronik",u:12, h:45000},
+      "Pisau":             {k:"Peralatan", u:12, h:20000},
+      "Botol Mayo":        {k:"Peralatan", u:12, h:40000},
+      "Tempat Topping":    {k:"Peralatan", u:12, h:38000},
+      "Mika Jelly":        {k:"Peralatan", u:12, h:15000},
+      "Laminating Menu":   {k:"Peralatan", u:12, h:15000},
+    };
+    var OPEX_NAMES = {
+      "Servis Kompor": true, "Servis Kabel Rol": true,
+      "Servis Mesin": true, "Tambal Ban": true, "Trashbag": true,
+    };
+
+    var tglMA = "02/05/2026";
+    var asetRows = [];
+    var updates = [];
+
+    // ── 3. Process each Modal Awal row ──
+    for (var i = 0; i < penData.length; i++) {
+      var kat = String(penData[i][1]).trim();
+      if (kat !== "Modal Awal") continue;
+      var nama = String(penData[i][2]).trim();
+      var rowNum = i + 4;
+
+      if (nama === "Petty Cash") {
+        updates.push({r:rowNum, c:8, v:"✓ Sync Kas"});
+      } else if (nama === "Saving Budget") {
+        updates.push({r:rowNum, c:8, v:"✓ Sync Kas"});
+      } else if (nama === "Galon + Isi") {
+        asetRows.push(["Galon","Peralatan",tglMA,40000,12,0]);
+        updates.push({r:rowNum, c:8, v:"✓ Sync Aset + Rekategori"});
+      } else if (ASSET_MAP[nama]) {
+        var a = ASSET_MAP[nama];
+        asetRows.push([nama, a.k, tglMA, a.h, a.u, 0]);
+        updates.push({r:rowNum, c:8, v:"✓ Sync Aset"});
+      } else if (OPEX_NAMES[nama]) {
+        updates.push({r:rowNum, c:2, v:"Operasional"});
+        updates.push({r:rowNum, c:8, v:"✓ Rekategori OPEX"});
+      } else {
+        updates.push({r:rowNum, c:8, v:"⚠ Perlu Review"});
+      }
+    }
+
+    if (asetRows.length === 0 && updates.length === 0) {
+      notify("Tidak ada item Modal Awal yang perlu di-sync.");
+      return;
+    }
+
+    // ── 4. Write Aset data (hapus example row + tulis batch) ──
+    var lastAset = shAset.getLastRow();
+    if (lastAset >= 5) shAset.getRange(5, 1, lastAset - 4, 9).clearContent();
+
+    if (asetRows.length > 0) {
+      shAset.getRange(5, 1, asetRows.length, 6).setValues(asetRows);
+      for (var j = 0; j < asetRows.length; j++) {
+        var r = j + 5;
+        shAset.getRange(r, COLx(CA.HARGA)).setNumberFormat('"Rp "#,##0');
+        shAset.getRange(r, COLx(CA.RESIDU)).setNumberFormat('"Rp "#,##0');
+        shAset.getRange(r, COLx(CA.DEPRESIASI_BLN))
+          .setFormula(F("=ROUND((D{row}-F{row})/E{row},0)", {row: r}))
+          .setNumberFormat('"Rp "#,##0');
+        shAset.getRange(r, COLx(CA.AKUMULASI)).setValue(0).setNumberFormat('"Rp "#,##0');
+        shAset.getRange(r, COLx(CA.NILAI_BUKU))
+          .setFormula(F("=D{row}-H{row}", {row: r}))
+          .setNumberFormat('"Rp "#,##0');
+        shAset.getRange(r, 1, 1, 9).setBackground("#FEF9E7").setFontSize(10);
+        shAset.setRowHeight(r, 24);
+      }
+    }
+
+    // ── 5. Write Kas entries (tulis langsung, tanpa lock nested) ──
+    var saldoPC = _getSaldoKas("PC");
+    var saldoPCBaru = saldoPC + 100000;
+    var lrKas = shKas.getLastRow() + 1;
+    shKas.getRange(lrKas, 1, 1, 6).setValues([
+      [tglMA, "PC", "Saldo Awal", "Modal awal 02/05/2026", 100000, saldoPCBaru]
+    ]);
+    shKas.getRange(lrKas, 5, 1, 2).setNumberFormat('"Rp "#,##0');
+    styleData(shKas.getRange(lrKas, 1, 1, 6), lrKas % 2 === 0 ? C.LIGHT : C.WHITE);
+    shKas.setRowHeight(lrKas, 22);
+
+    var saldoUB = _getSaldoKas("UB");
+    var saldoUBBaru = saldoUB + 1000000;
+    lrKas = shKas.getLastRow() + 1;
+    shKas.getRange(lrKas, 1, 1, 6).setValues([
+      [tglMA, "UB", "Saldo Awal", "Saving budget 02/05/2026", 1000000, saldoUBBaru]
+    ]);
+    shKas.getRange(lrKas, 5, 1, 2).setNumberFormat('"Rp "#,##0');
+    styleData(shKas.getRange(lrKas, 1, 1, 6), lrKas % 2 === 0 ? C.LIGHT : C.WHITE);
+    shKas.setRowHeight(lrKas, 22);
+
+    _updateSaldoDisplay(shKas, "PC", _getSaldoKas("PC"));
+    _updateSaldoDisplay(shKas, "UB", _getSaldoKas("UB"));
+
+    // ── 6. Append "Air Isi Galon" ke Pengeluaran ──
+    var newRowNum = lastPen + 1;
+    shPen.getRange(newRowNum, 1, 1, 8).setValues([
+      [tglMA, "Operasional", "Air Isi Galon", "Pcs", 1, 10000, 10000, "✎ Impor Sync"]
+    ]);
+    shPen.getRange(newRowNum, 1).setNumberFormat("DD/MM/YYYY");
+    shPen.getRange(newRowNum, 6, 1, 2).setNumberFormat('"Rp "#,##0');
+
+    // ── 7. Apply updates ke Pengeluaran ──
+    for (var u = 0; u < updates.length; u++) {
+      shPen.getRange(updates[u].r, updates[u].c).setValue(updates[u].v);
+    }
+
+    // ── 8. Selesai ──
+    SpreadsheetApp.flush();
+    refreshLaporan();
+    auditLog("Sync Modal Awal", asetRows.length + " aset, PC 100rb, UB 1jt");
+    notify("✅ Sync selesai! " + asetRows.length +
+      " aset tetap masuk Aset, PC (100rb) & UB (1jt) masuk Kas.\n" +
+      "▶ Jalankan menu 📉 Posting Penyusutan untuk posting depresiasi bulan Mei.");
+  });
+}

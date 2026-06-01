@@ -297,7 +297,8 @@ function _getOPEXPerDay(tglStr) {
   var data = sh.getRange(4, 1, sh.getLastRow() - 3, 7).getValues();
   var total = 0;
   for (var i = 0; i < data.length; i++) {
-    if (fmtDate(data[i][COL.PENGELUARAN.TGL]) === tglStr) {
+    if (fmtDate(data[i][COL.PENGELUARAN.TGL]) === tglStr &&
+        String(data[i][COL.PENGELUARAN.KATEGORI]).trim() === "Operasional") {
       total += Number(data[i][COL.PENGELUARAN.TOTAL]) || 0;
     }
   }

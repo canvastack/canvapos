@@ -101,12 +101,12 @@ function getSaldoPC() { return _getSaldoKas("PC"); }
 function getSaldoUB() { return _getSaldoKas("UB"); }
 
 // ── Helper: catat transaksi ke Kas ────────────────────────────────────
-function _catatKas(kategori, jenis, keterangan, jumlah) {
+function _catatKas(kategori, jenis, keterangan, jumlah, tgl) {
   withLock(10000, function() {
     var sh = getSheet(SHEET.KAS);
     if (!sh) return;
     var C = getC();
-    var today = fmtDate(new Date());
+    var today = tgl ? fmtDate(tgl) : fmtDate(new Date());
     var saldoLama = _getSaldoKas(kategori);
 
     var isDebit = ["Saldo Awal","Top Up","Setor"].indexOf(jenis) >= 0;

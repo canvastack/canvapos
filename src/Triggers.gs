@@ -40,6 +40,7 @@ function onOpen() {
     .addSeparator()
     .addItem("📦 Tambah Aset Tetap", "addAset")
     .addItem("📉 Posting Penyusutan", "postingDepresiasi")
+    .addItem("🔄 Sync Modal Awal → Aset + Kas", "syncModalAwalKeAsetDanKas")
     .addSeparator()
     .addItem("🔧 Setup Ulang (reset semua)", "setupPOS")
     .addItem("🔒 Proteksi Semua Sheet", "protectAll")
