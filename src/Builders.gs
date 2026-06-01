@@ -44,7 +44,7 @@ function setupPOS(env) {
 
   deleteSheetIfExists(ss, tempName);
 
-  var order = ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Kas","Bahan","Resep","Aset","Audit"];
+  var order = ["Panduan","Bahan","Resep","Kas","Stock","Pengeluaran","POS","Transaksi","Pendapatan","Aset","Audit"];
   order.forEach(function(name, i) {
     var sh = ss.getSheetByName(name);
     if (sh) { ss.setActiveSheet(sh); ss.moveActiveSheet(i + 1); }
@@ -54,6 +54,16 @@ function setupPOS(env) {
   clearDynamicCache();
   protectAll(); // P3.1 — auto-protect after setup
   setupNamedRanges(); // P3.4 — auto-create named ranges after setup
+
+  // Auto-install onEdit trigger jika belum ada
+  try {
+    var triggers = ScriptApp.getProjectTriggers();
+    var hasTrigger = triggers.some(function(t) { return t.getHandlerFunction() === "onEdit"; });
+    if (!hasTrigger) {
+      ScriptApp.newTrigger("onEdit").forSpreadsheet(ss).onEdit().create();
+    }
+  } catch(e) { /* non-UI or restricted context — user can install manually */ }
+
   auditLog("Setup POS", "Semua sheet dibuat kembali: Bahan, Resep, Stock, Transaksi, Pengeluaran, Kas, Audit, Pendapatan, POS, Panduan");
   try { SpreadsheetApp.getUi().alert("✅ Setup selesai!\n\nSemua sheet sudah dibuat.\nMulai transaksi dari sheet POS."); } catch(e) { /* non-UI context */ }
 }

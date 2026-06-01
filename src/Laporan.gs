@@ -455,7 +455,11 @@ function refreshLaporan() {
 
     shPen.getRange(R.PNL_DATE, 2).setFormula('=TEXT(TODAY(),"DD/MM/YYYY")')
       .setFontSize(10).setHorizontalAlignment("center");
-    setPnL(R.PNL_REVENUE,      t.revenue);
+    // Revenue — live SUMIF formula (tidak overwrite dengan value)
+    shPen.getRange(R.PNL_REVENUE, 2)
+      .setFormula('=SUMIF(TRX_Tgl,TEXT(TODAY(),"DD/MM/YYYY"),TRX_Total)')
+      .setFontSize(10).setBackground(C.WHITE).setFontWeight("bold")
+      .setHorizontalAlignment("right").setNumberFormat('"Rp "#,##0');
     setPnL(R.PNL_HPP_UTAMA,    t.hppUtama);
     setPnL(R.PNL_HPP_TOP,      t.hppTop);
     setPnL(R.PNL_HPP_SUPPORT,  t.hppSupport);
@@ -512,9 +516,13 @@ function refreshLaporan() {
     hariKeys.forEach(function(tgl, i) {
       var r = DATA_ROW + i;
       var d = hariMap[tgl];
+      // Depresiasi per-bulan sesuai tanggal row (bukan bulan berjalan)
+      var parts = tgl.split("/");
+      var bulanDepr = parts[1] + "/" + parts[2]; // MM/YYYY
+      var depr = getTotalDepresiasi(bulanDepr);
       var gp     = d.revenue - d.hppTotal;
       var ebitda = gp - d.opex;
-      var ebit   = ebitda - depresiasiHarian;
+      var ebit   = ebitda - depr;
       var pajak  = ebit * PAJAK_PERSEN;
       var net    = ebit - pajak;
       var bg     = applyZebraRow(shPen, r, i, 15);
@@ -524,7 +532,7 @@ function refreshLaporan() {
       shPen.getRange(r, 1, 1, 15).setValues([[
         tgl, d.trx, d.cup, d.revenue,
         d.hppUtama, d.hppTop, d.hppSupport, d.hppKemasan,
-        gp, d.opex, ebitda, depresiasiHarian, ebit, pajak, net
+        gp, d.opex, ebitda, depr, ebit, pajak, net
       ]]).setBackground(bg).setFontSize(10);
 
       shPen.getRange(r, 1).setHorizontalAlignment("center");
