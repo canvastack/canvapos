@@ -53,6 +53,13 @@
 - **`refreshDashboard()` Revenue** — Baca dari Pendapatan B6 (Revenue), bukan B8 (HPP Topping)
 - **`syncModalAwalKeAsetDanKas()` guard** — Skip hanya jika status berisi "Sync Aset"/"Sync Kas", bukan sembarang status tidak kosong (bertabrakan dengan "✓ Synced" dari simpanPengeluaran)
 
+### Enhanced — Data Flow & Tab Order
+
+- **Revenue (B6) live formula** — `refreshLaporan()` tidak lagi overwrite B6 dengan value. Revenue pakai `SUMIF(TRX_Tgl,...)` biar auto-update saat Transaksi berubah. HPP, OPEX, Depresiasi tetap nilai statis dari kode (butuh Refresh Laporan untuk update).
+- **Depresiasi per-bulan di Rekap Harian** — Setiap baris rekap harian sekarang hitung depresiasi sesuai bulan baris tersebut (via `getTotalDepresiasi(MM/YYYY)`), bukan pakai depresiasi bulan berjalan untuk semua hari.
+- **Auto-install onEdit trigger** — `setupPOS()` otomatis pasang trigger `onEdit` jika belum ada. User tidak perlu klik "⚡ Install Auto-Fix Trigger" manual lagi.
+- **Tab order workflow-based** — Urutan tab baru: Panduan → Bahan → Resep → Kas → Stock → Pengeluaran → POS → Transaksi → Pendapatan → Aset → Audit. Mengikuti alur: Config → Pre-Op → Operations → Reports.
+
 ### Configuration
 
 - **Config.gs**: `COL.PENDAPATAN` 6→15 columns, new `COL.ASET`, `SHEET.ASET`, `PAJAK_PERSEN` (0), `KATEGORI_HPP_MAP`

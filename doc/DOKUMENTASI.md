@@ -295,13 +295,14 @@ UnitConverter.baseUnit(unit)                   // → "Gram" / "ml"
 Fungsi utama yang membangun seluruh workbook:
 
 1. Set timezone `Asia/Jakarta`
-2. Hapus semua sheet existing (Panduan, POS, Stock, Transaksi, Pendapatan, Pengeluaran, Kas, Bahan, Resep, Audit)
+2. Hapus semua sheet existing (Panduan, POS, Stock, Transaksi, Pendapatan, Pengeluaran, Kas, Bahan, Resep, Audit, Aset)
 3. Build sheet berurutan (dengan `SpreadsheetApp.flush()` tiap step):
-   `Bahan → Resep → Transaksi → Stock → Pengeluaran → Kas → Audit → **Aset** → Pendapatan → POS → Panduan`
-4. Reorder sheet
+   `Bahan → Resep → Transaksi → Stock → Pengeluaran → Kas → Audit → Aset → Pendapatan → POS → Panduan`
+4. Reorder sheet ke workflow order: **Panduan → Bahan → Resep → Kas → Stock → Pengeluaran → POS → Transaksi → Pendapatan → Aset → Audit**
 5. Auto-protect semua formula cells via `protectAll()`
 6. Setup named ranges via `setupNamedRanges()`
-7. Tampilkan alert sukses
+7. Auto-install `onEdit` trigger (jika belum ada)
+8. Tampilkan alert sukses
 
 **Dependency order:**
 - Pengeluaran & Kas harus SEBELUM Pendapatan (formula mereferensi sheet tersebut)
