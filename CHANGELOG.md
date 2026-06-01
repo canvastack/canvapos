@@ -25,28 +25,33 @@
   - `postingDepresiasi()` — Posting penyusutan bulan ini ke akumulasi + refresh laporan
   - `getTotalDepresiasi()` — Hitung total depresiasi per bulan (digunakan di P&L)
 
+### Added — Sync Modal Awal Migration
+
+- **`syncModalAwalKeAsetDanKas()`** — Batch migration: 14 item Modal Awal → Aset (fixed asset register), Petty Cash → Kas (PC), Saving Budget → Kas (UB), 5 biaya servis → rekategori Operasional, Galon+Isi → split Aset+OPEX
+- **Menu item:** `🔄 Sync Modal Awal → Aset + Kas`
+- **Guard:** Cek kolom Status spesifik — aman di-run ulang
+
+### Added — Enhanced Panduan (Dashboard + Konfigurasi)
+
+- **`buildPanduan()` rewrite** — Dashboard 11 baris (System Health, Transaksi Terakhir, Pendapatan Hari Ini, Laba Bersih, Total Order, Stok Menipis, Total Aset, OPEX Bulan Ini, Saldo PC/UB) + **⚙️ Konfigurasi Sistem** (harga, pajak, HPP) + updated Panduan (Unit Input Guide 18 baris, Menu Reference, BOM/P&L explanation, 11 sheet references)
+- **`refreshDashboard()` rewrite** — 11 metrik update otomatis (sebelumnya 6). Fix bug: **Revenue read dari B6** (dulu B8 = HPP Topping!)
+- **Health check** — Sekarang cek 11 sheets (tambah Aset)
+- **Column widths:** 40px → 160px (label kolom A lebih lebar)
+
 ### Changed
 
 - **`buildPendapatan()`** — Rewrite total: P&L Hari Ini 5-level (14 baris, 3 kolom), Rekap Harian 15 kolom, Rekap Bulanan 15 kolom, Kas status di baris 21-22
 - **`refreshLaporan()`** — Rewrite total: agregasi HPP per kategori (bukan total saja), OPEX harian, depresiasi per bulan, 15 kolom daily/monthly rekaps
 - **`clearDynamicCache()`** — Juga clear `HPP_CAT_CACHE` + `HPP_CACHE`
-- **`setupPOS()`** — Build Aset sheet setelah Audit, sebelum Pendapatan
-- **`Triggers.gs` menu** — +2 item: 📦 Tambah Aset Tetap, 📉 Posting Penyusutan
-
-### Added — Sync Modal Awal Migration
-
-- **`syncModalAwalKeAsetDanKas()`** — Batch migration: 14 item Modal Awal → Aset (fixed asset register), Petty Cash → Kas (PC), Saving Budget → Kas (UB), 5 biaya servis → rekategori Operasional, Galon+Isi → split Aset+OPEX
-- **Menu item:** `🔄 Sync Modal Awal → Aset + Kas`
-- **Guard:** Cek kolom Status di Pengeluaran — aman di-run ulang
+- **`setupPOS()`** — Build Aset sheet setelah Audit, sebelum Pendapatan. Fix: tambah "Aset" ke sheet deletion list
+- **`_catatKas()`** — Tambah parameter opsional `tgl` untuk backdate entry
+- **`Triggers.gs` menu** — +3 item: 📦 Tambah Aset Tetap, 📉 Posting Penyusutan, 🔄 Sync Modal Awal → Aset + Kas
 
 ### Fixed
 
 - **`_getOPEXPerDay()`** — Sekarang filter cuma kategori "Operasional" (sebelumnya jumlah SEMUA pengeluaran per tanggal, termasuk bahan baku & modal awal → double-counting HPP di P&L)
-
-### Changed
-
-- **`_catatKas()`** — Tambah parameter opsional `tgl` untuk backdate entry
-- **`Triggers.gs` menu** — +1 item: 🔄 Sync Modal Awal → Aset + Kas
+- **`refreshDashboard()` Revenue** — Baca dari Pendapatan B6 (Revenue), bukan B8 (HPP Topping)
+- **`syncModalAwalKeAsetDanKas()` guard** — Skip hanya jika status berisi "Sync Aset"/"Sync Kas", bukan sembarang status tidak kosong (bertabrakan dengan "✓ Synced" dari simpanPengeluaran)
 
 ### Configuration
 

@@ -467,9 +467,12 @@ Kolom C: % indicator untuk Revenue & Net Profit.
 ### 5.9 Panduan (Build: `buildPanduan`)
 
 - **Tab color:** Dark (#2C3E50)
+- **Columns:** A=160px, B=280px, C=200px, D=120px, E=80px
 - **Sections:**
-  - Baris 1-8: Dashboard (System Health, Transaksi Terakhir, Pendapatan Hari Ini, Stok Menipis, Saldo PC/UB)
-  - Baris 9+: Panduan lengkap: Cara Pakai, Harga, Input Bahan (Gram), HPP Estimasi, Sheet Reference
+  - Baris 1-11: **Dashboard** (System Health, Transaksi Terakhir, Pendapatan Hari Ini, Laba Bersih, Total Order, Stok Menipis, Total Aset, OPEX Bulan Ini, Saldo PC/UB) — 11 metrik, update via `refreshDashboard()`
+  - Baris 13-17: **⚙️ Konfigurasi Sistem** — display constants: Harga Jual (5rb), Topping (1rb), Pajak (0%), HPP(2.200/80)
+  - Baris 19: **📖 Panduan Penggunaan** header
+  - Baris 20+: Cara Pakai (9 langkah), Harga & P&L 5-level reference, Menu Reference (34 item), **📏 Unit Input Guide** (18 baris — tambah Gooday, Chocolatos, ABC Klepon, Tissue), BOM & HPP explanation (5-level P&L), **👤 Sheet Reference** (11 sheets)
 
 ### 5.10 Audit (Build: `buildAudit`)
 
@@ -661,7 +664,7 @@ Margin        = Net Profit / Revenue × 100
 
 | Fungsi | Deskripsi |
 |---|---|
-| `refreshDashboard()` | Update 6 metric di Panduan baris 2-7 |
+| `refreshDashboard()` | Update 11 metrik di Panduan baris 2-11 (health, transaksi, revenue, laba, order, stok, aset, opex, PC/UB). Fix: Revenue baca dari B6 bukan B8 |
 
 ### 6.14 Sheet Protection — `src/Builders.gs`
 
