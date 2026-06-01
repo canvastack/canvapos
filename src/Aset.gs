@@ -238,8 +238,9 @@ function syncModalAwalKeAsetDanKas() {
     if (lastPen < 4) { notify("Tidak ada data Pengeluaran.", true); return; }
     var penData = shPen.getRange(4, 1, lastPen - 3, 8).getValues();
     for (var i = 0; i < penData.length; i++) {
+      var stat = String(penData[i][7]).trim();
       if (String(penData[i][1]).trim() === "Modal Awal" &&
-          String(penData[i][7]).trim() !== "") {
+          (stat.indexOf("Sync Aset") >= 0 || stat.indexOf("Sync Kas") >= 0)) {
         notify("✅ Data Modal Awal sudah pernah di-sync. Lewati.");
         return;
       }
@@ -297,7 +298,7 @@ function syncModalAwalKeAsetDanKas() {
     }
 
     if (asetRows.length === 0 && updates.length === 0) {
-      notify("Tidak ada item Modal Awal yang perlu di-sync.");
+      notify("Tidak ada item Modal Awal ditemukan.\nJalankan 📥 Import Data Mei dulu jika data sudah terhapus.");
       return;
     }
 
