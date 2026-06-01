@@ -33,6 +33,21 @@
 - **`setupPOS()`** — Build Aset sheet setelah Audit, sebelum Pendapatan
 - **`Triggers.gs` menu** — +2 item: 📦 Tambah Aset Tetap, 📉 Posting Penyusutan
 
+### Added — Sync Modal Awal Migration
+
+- **`syncModalAwalKeAsetDanKas()`** — Batch migration: 14 item Modal Awal → Aset (fixed asset register), Petty Cash → Kas (PC), Saving Budget → Kas (UB), 5 biaya servis → rekategori Operasional, Galon+Isi → split Aset+OPEX
+- **Menu item:** `🔄 Sync Modal Awal → Aset + Kas`
+- **Guard:** Cek kolom Status di Pengeluaran — aman di-run ulang
+
+### Fixed
+
+- **`_getOPEXPerDay()`** — Sekarang filter cuma kategori "Operasional" (sebelumnya jumlah SEMUA pengeluaran per tanggal, termasuk bahan baku & modal awal → double-counting HPP di P&L)
+
+### Changed
+
+- **`_catatKas()`** — Tambah parameter opsional `tgl` untuk backdate entry
+- **`Triggers.gs` menu** — +1 item: 🔄 Sync Modal Awal → Aset + Kas
+
 ### Configuration
 
 - **Config.gs**: `COL.PENDAPATAN` 6→15 columns, new `COL.ASET`, `SHEET.ASET`, `PAJAK_PERSEN` (0), `KATEGORI_HPP_MAP`

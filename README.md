@@ -93,6 +93,7 @@ clasp open
 | 📅 Pilih Tanggal (cell aktif) | Date picker untuk cell aktif |
 | 📦 Tambah Aset Tetap | Dialog tambah aset tetap baru |
 | 📉 Posting Penyusutan | Posting depresiasi bulan ini |
+| 🔄 Sync Modal Awal → Aset + Kas | Migrasi data Modal Awal ke Aset tetap & Kas |
 | 🔧 Setup Ulang (reset semua) | Reset semua sheet |
 | 🔒 Proteksi Semua Sheet | Proteksi formula & header |
 | 🔓 Unprotect Semua Sheet | Hapus semua proteksi |

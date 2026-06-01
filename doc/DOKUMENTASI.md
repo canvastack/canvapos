@@ -747,6 +747,7 @@ Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan
 ──────────
 📦 Tambah Aset Tetap
 📉 Posting Penyusutan
+🔄 Sync Modal Awal → Aset + Kas
 ──────────
 🔧 Setup Ulang (reset semua)
 🔒 Proteksi Semua Sheet
@@ -967,6 +968,7 @@ Klik **🧋 POS → 🔄 Refresh Laporan Pendapatan** — update P&L Hari Ini, R
 
 - **Tambah Aset:** **🧋 POS → 📦 Tambah Aset Tetap** — isi Nama, Kategori, Tanggal Beli, Harga, Umur, Residu
 - **Depresiasi:** Setiap awal bulan, **🧋 POS → 📉 Posting Penyusutan** — akumulasi + refresh P&L
+- **Sync Modal Awal:** **🧋 POS → 🔄 Sync Modal Awal → Aset + Kas** — Migrasi satu kali data Modal Awal dari Pengeluaran ke Aset (14 aset tetap) + Kas (PC 100rb, UB 1jt). Otomatis rekategori 5 item biaya servis ke Operasional. Aman di-run ulang (guard via kolom Status).
 
 ### 10.8 Backup
 
