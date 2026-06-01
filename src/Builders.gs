@@ -560,105 +560,168 @@ function buildPanduan(ss) {
   sh.setTabColor(C.DARK);
 
   // ═══════════════════════════════════════════════════════════════════
-  // DASHBOARD SECTION (rows 1-8)
+  // DASHBOARD SECTION (rows 1-11)
   // ═══════════════════════════════════════════════════════════════════
-  sh.getRange("A1:D1").merge()
+  var dash = function(label, row) {
+    sh.getRange(row, 1).setValue(label)
+      .setFontWeight("bold").setFontSize(10)
+      .setBackground(C.LIGHT).setVerticalAlignment("middle");
+    sh.getRange(row, 2, 1, 4).merge()
+      .setFontSize(10).setFontColor(C.DARK).setVerticalAlignment("middle")
+      .setHorizontalAlignment("left");
+    sh.setRowHeight(row, 22);
+  };
+
+  sh.getRange("A1:E1").merge()
     .setValue("📊 Dashboard CanvaPOS")
     .setBackground(C.DARK).setFontColor(C.WHITE)
     .setFontWeight("bold").setFontSize(14)
     .setHorizontalAlignment("center").setVerticalAlignment("middle");
   sh.setRowHeight(1, 36);
 
-  var labels = [
-    ["System Health", "✅ Aktif", "", ""],
-    ["Transaksi Terakhir", "", "", ""],
-    ["Pendapatan Hari Ini", "", "", ""],
-    ["Item Stok Menipis", "", "", ""],
-    ["Saldo PC", "", "", ""],
-    ["Saldo UB", "", "", ""],
-    ["", "", "", ""],
-  ];
-  labels.forEach(function(row, i) {
-    var r = i + 2;
-    sh.getRange(r, 1).setValue(row[0])
-      .setFontWeight("bold").setFontSize(10)
+  dash("🖥️ System Health",         2); dash("💳 Transaksi Terakhir",    3);
+  dash("📈 Pendapatan Hari Ini",   4); dash("🏆 Laba Bersih Hari Ini",  5);
+  dash("📦 Total Order Hari Ini",  6); dash("📉 Item Stok Menipis",     7);
+  dash("🏦 Total Aset Tetap",      8); dash("💸 OPEX Bulan Ini",        9);
+  dash("💳 Saldo PC",             10); dash("🛒 Saldo UB",             11);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // KONFIGURASI SECTION (rows 13-17)
+  // ═══════════════════════════════════════════════════════════════════
+  var cfgLabel = function(row, val, unit) {
+    sh.getRange(row, 1).setFontWeight("bold").setFontSize(10)
       .setBackground(C.LIGHT).setVerticalAlignment("middle");
-    sh.getRange(r, 2, 1, 3).merge()
-      .setValue(row[1] || "")
-      .setFontSize(10).setFontColor(C.GREEN).setVerticalAlignment("middle");
-    sh.setRowHeight(r, 22);
+    sh.getRange(row, 2, 1, 2).merge().setValue(val)
+      .setFontSize(10).setFontWeight("bold").setFontColor(C.DARK)
+      .setBackground(C.WHITE).setVerticalAlignment("middle");
+    if (unit) sh.getRange(row, 4).setValue(unit)
+      .setFontSize(9).setFontColor(C.GRAY).setVerticalAlignment("middle");
+    sh.setRowHeight(row, 22);
+  };
+
+  sh.getRange("A13:E13").merge()
+    .setValue("⚙️ Konfigurasi Sistem")
+    .setBackground(C.PURPLE).setFontColor(C.WHITE)
+    .setFontWeight("bold").setFontSize(11)
+    .setHorizontalAlignment("center").setVerticalAlignment("middle");
+  sh.setRowHeight(13, 28);
+
+  var cfgs = [
+    ["Harga Jual Base",    "Rp 5.000", "/ cup"],
+    ["Harga Topping",      "Rp 1.000", "/ jenis / cup"],
+    ["Pajak (PPh Final)",  "0%",       "(omzet < 500jt/thn)"],
+    ["HPP per Cup (BOM)",  "Rp 2.200", "per cup"],
+    ["HPP per Topping",    "Rp 80",    "per jenis"],
+  ];
+  cfgs.forEach(function(c, i) {
+    sh.getRange(14 + i, 1).setValue(c[0]);
+    cfgLabel(14 + i, c[1], c[2]);
   });
 
-  // Kas status row with real references
-  sh.getRange(9, 1, 1, 4).merge()
+  // ═══════════════════════════════════════════════════════════════════
+  // GUIDE SECTION (rows 19+)
+  // ═══════════════════════════════════════════════════════════════════
+  var section = function(label, row) {
+    sh.getRange(row, 1, 1, 4).merge()
+      .setValue(label)
+      .setBackground(C.ORANGE).setFontColor(C.WHITE)
+      .setFontWeight("bold").setFontSize(11);
+    sh.setRowHeight(row, 28);
+  };
+  var guide = function(row, a, b, c, d) {
+    var bold = a && !!a.match(/^\d\./);
+    if (a && a.match(/^[🧋💰📊📏📦📋👤🔄🗑]/)) {
+      section(a, row);
+    } else {
+      sh.getRange(row, 1).setValue(a || "").setFontWeight(bold ? "normal" : "bold").setFontSize(10);
+      sh.getRange(row, 2).setValue(b || "").setFontSize(10);
+      sh.getRange(row, 3).setValue(c || "").setFontSize(10);
+      sh.getRange(row, 4).setValue(d || "").setFontSize(10);
+      sh.setRowHeight(row, 22);
+    }
+  };
+
+  sh.getRange("A19:E19").merge()
     .setValue("📖 Panduan Penggunaan CanvaPOS")
     .setBackground(C.DARK).setFontColor(C.WHITE)
     .setFontWeight("bold").setFontSize(14)
     .setHorizontalAlignment("center").setVerticalAlignment("middle");
-  sh.setRowHeight(9, 40);
+  sh.setRowHeight(19, 40);
 
-  var panduan = [
-    ["","","",""],
-    ["🧋 CARA PAKAI","","",""],
-    ["1.","Buka sheet POS","",""],
-    ["2.","Pilih Product Variant dari dropdown di kolom B","",""],
-    ["3.","Isi jumlah cup di kolom C","",""],
-    ["4.","Klik menu POS → Pilih Topping untuk menambah topping per baris","",""],
-    ["5.","Harga otomatis terhitung di kolom F, G, H","",""],
-    ["6.","Klik menu POS → Simpan Transaksi untuk menyimpan ke log","",""],
-    ["7.","Klik menu POS → Clear POS untuk reset setelah transaksi selesai","",""],
-    ["8.","Klik menu POS → Add Row untuk tambah baris order","",""],
-    ["","","",""],
-    ["💰 HARGA","","",""],
-    ["Pop Ice Blender (all varian)","Rp 5.000/cup","",""],
-    ["Kopi Tubruk (Robusta & Arabika)","Rp 5.000/cup","",""],
-    ["Es Teh Original","Rp 5.000/cup","",""],
-    ["Tambah Topping","Rp 1.000/jenis/cup","",""],
-    ["","","",""],
-    ["📏 UNIT INPUT GUIDE","","",""],
+  var g = [
+    ["🧋 CARA PAKAI"],
+    ["1.","Buka sheet POS"],
+    ["2.","Pilih Product Variant dari dropdown di kolom B"],
+    ["3.","Isi jumlah cup di kolom C"],
+    ["4.","🍬 Pilih Topping (baris aktif) — checklist topping per baris"],
+    ["5.","Harga otomatis terhitung (kolom F=topping, G=base, H=total)"],
+    ["6.","💾 Simpan Transaksi → simpan ke log + update stok otomatis"],
+    ["7.","🗑 Clear POS → reset setelah transaksi selesai"],
+    ["8.","➕ Add Row → tambah baris order baru"],
+    ["9.","📊 Refresh Laporan → update P&L di tab Pendapatan"],
+    [],
+    ["💰 HARGA & LAPORAN"],
+    ["Pop Ice Blender (all varian)","Rp 5.000 / cup"],
+    ["Kopi Tubruk (Robusta & Arabika)","Rp 5.000 / cup"],
+    ["Es Teh Original","Rp 5.000 / cup"],
+    ["Tambah Topping","Rp 1.000 / jenis / cup"],
+    ["Laporan Laba/Rugi","📊 5-Level P&L di tab Pendapatan"],
+    ["", "Revenue → HPP(4 kategori) → Gross Profit → OPEX → EBITDA → Depresiasi → EBIT → Pajak → Net Profit"],
+    [],
+    ["📋 MENU UTAMA"],
+    ["💾 Simpan Transaksi","➕ Add Row","🍬 Pilih Topping"],
+    ["🗑 Clear POS","♻ Safe Clear","↩ Restore POS"],
+    ["💸 Simpan & Sync Stok","➕ Add Row Pengeluaran","🔧 Fix Formula Total"],
+    ["🔄 Refresh Laporan Pendapatan","📊 Refresh Dashboard","📥 Import Data Mei"],
+    ["💰 Top Up PC","🛒 Top Up UB","📅 Init Saldo Awal PC & UB"],
+    ["📦 Tambah Aset Tetap","📉 Posting Penyusutan","🔄 Sync Modal Awal → Aset + Kas"],
+    ["🔧 Setup Ulang","🔒 Proteksi Sheet","📀 Backup / Restore"],
+    [],
+    ["📏 UNIT INPUT GUIDE"],
     ["Bahan","Beli per","Input Jumlah","Satuan Stok"],
     ["Pop Ice (all varian)","1 renceng = 10 sachet","10","Piece"],
     ["Kopi Robusta & Arabika","1 kg","1000","Gram"],
     ["Teh Celup","1 pack = 100 kantong","100","Piece"],
-    ["Gula Pasir","1 kg","1000","Gram"],
+    ["Gooday / Chocolatos / ABC Klepon","1 box = 10 sachet","10","Piece"],
+    ["Gula Pasir / Gula Aren","1 kg / 500g","1000 / 500","Gram"],
     ["Susu SKM","1 kaleng = 370g","370","Gram"],
-    ["Gula Aren","500g","500","Gram"],
     ["Es Batu Kristal","1 balok = 20kg","20","Kg"],
     ["Air (Galon)","1 galon = 19L","19","Liter"],
-    ["Cup Plastik / Tutup","1 pack = 50 pcs","50","Piece"],
-    ["Paper Cup / Tutup","1 pack = 50 pcs","50","Piece"],
+    ["Cup Plastik / Paper Cup","1 pack = 50 pcs","50","Piece"],
+    ["Tutup Cup Plastik / Tutup Paper","1 pack = 50 pcs","50","Piece"],
     ["Sedotan Biasa","1 pack = 500 pcs","500","Piece"],
     ["Sedotan Boba","1 pack = 250 pcs","250","Piece"],
-    ["Topping (Keju, Choco, dll)","250g","250","Gram"],
-    ["","","",""],
-    ["📦 HPP ESTIMASI","","",""],
-    ["HPP per cup (tanpa topping)","Rp 2.200","",""],
-    ["HPP per jenis topping","Rp 80","",""],
-    ["","","",""],
-    ["📊 SHEET","","",""],
-    ["POS","Input transaksi harian","",""],
-    ["Stock","Stok bahan real-time + restock alert","",""],
-    ["Transaksi","Log history semua transaksi","",""],
-    ["Pendapatan","Laporan laba/rugi harian & bulanan","",""],
-    ["Bahan","Master data harga beli bahan","",""],
+    ["Topping (Keju, Choco, Boba, dll)","250g","250","Gram"],
+    ["Tissue","1 pack = 3 pcs","3","Piece"],
+    [],
+    ["📦 BOM & HPP"],
+    ["HPP dihitung dari BOM (Bill of Materials) di tab Resep"],
+    ["4 kategori HPP: Bahan Utama | Topping | Bahan Pendukung | Kemasan"],
+    ["Gross Profit = Revenue − Total HPP (BOM)"],
+    ["EBITDA = Gross Profit − OPEX (biaya Operasional)"],
+    ["EBIT = EBITDA − Depresiasi (penyusutan aset)"],
+    ["Net Profit = EBIT − Pajak"],
+    ["HPP per cup (fallback): Rp 2.200 | per topping: Rp 80"],
+    [],
+    ["👤 SHEET REFERENCE"],
+    ["Panduan","Dashboard + panduan penggunaan (ini)"],
+    ["POS","Input transaksi harian dengan dropdown varian"],
+    ["Stock","Stok bahan real-time + restock alert (✅/⚠)"],
+    ["Transaksi","Log history semua transaksi (12 kolom)"],
+    ["Pendapatan","Laporan laba/rugi 5-level (harian & bulanan)"],
+    ["Pengeluaran","Catatan pembelian & biaya operasional"],
+    ["Kas","Tracking Petty Cash (PC) & Uang Belanja (UB)"],
+    ["Bahan","Master data harga beli bahan baku"],
+    ["Resep","Bill of Materials — komposisi setiap produk"],
+    ["Aset","Daftar aset tetap & penyusutan garis lurus"],
+    ["Audit","Hidden log aktivitas (90-day retention)"],
   ];
 
-  panduan.forEach(function(row, i) {
-    var r = i + 10;
-    if (row[0] && row[0].match(/^[🧋💰📦📊📏]/)) {
-      sh.getRange(r, 1, 1, 4).merge()
-        .setValue(row[0])
-        .setBackground(C.ORANGE).setFontColor(C.WHITE)
-        .setFontWeight("bold").setFontSize(11);
-      sh.setRowHeight(r, 28);
-    } else {
-      sh.getRange(r, 1).setValue(row[0]).setFontWeight(row[0].match(/^\d\./) ? "normal" : "bold");
-      sh.getRange(r, 2).setValue(row[1]);
-      sh.setRowHeight(r, 22);
-    }
+  g.forEach(function(row, i) {
+    guide(i + 20, row[0], row[1], row[2], row[3]);
   });
 
-  [40, 400, 200, 100].forEach(function(w,i) { sh.setColumnWidth(i+1,w); });
+  [160, 280, 200, 120, 80].forEach(function(w,i) { sh.setColumnWidth(i+1,w); });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -745,17 +808,17 @@ function refreshDashboard() {
   var sh = getSheet(SHEET.PANDUAN);
   if (!sh) return;
   var C = getC();
+  var setDash = function(row, val, color) {
+    sh.getRange(row, 2, 1, 4).merge().setValue(val)
+      .setFontSize(10).setFontColor(color || C.DARK).setVerticalAlignment("middle");
+  };
 
   // Row 2: System Health
-  var allSheets = [SHEET.POS, SHEET.STOCK, SHEET.TRANSAKSI, SHEET.PENDAPATAN,
-    SHEET.PENGELUARAN, SHEET.BAHAN, SHEET.RESEP, SHEET.KAS, SHEET.AUDIT];
+  var allSheets = ["Panduan","POS","Stock","Transaksi","Pendapatan","Pengeluaran","Bahan","Resep","Kas","Audit","Aset"];
   var missing = [];
-  allSheets.forEach(function(name) {
-    if (!getSheet(name)) missing.push(name);
-  });
-  var health = missing.length === 0 ? "✅ Semua sheet OK" : "⚠ Sheet hilang: " + missing.join(", ");
-  sh.getRange("B2:D2").merge().setValue(health)
-    .setFontColor(missing.length === 0 ? C.GREEN : C.RED).setFontSize(10);
+  allSheets.forEach(function(n) { if (!getSheet(n)) missing.push(n); });
+  setDash(2, missing.length === 0 ? "✅ Semua sheet OK" : "⚠ Sheet hilang: " + missing.join(", "),
+    missing.length === 0 ? C.GREEN : C.RED);
 
   // Row 3: Transaksi Terakhir
   var shTrx = getSheet(SHEET.TRANSAKSI);
@@ -763,49 +826,91 @@ function refreshDashboard() {
     var trxLast = shTrx.getLastRow();
     if (trxLast > 2) {
       var lastData = shTrx.getRange(trxLast, 1, 1, 12).getValues()[0];
-      sh.getRange("B3:D3").merge().setValue(
-        lastData[0] + " — " + (lastData[COL.TRANSAKSI.VARIAN] || "") + " — Rp " + ((lastData[COL.TRANSAKSI.TOTAL] || 0).toLocaleString("id-ID"))
-      ).setFontSize(10).setFontColor(C.DARK);
+      setDash(3, lastData[0] + " — " + (lastData[COL.TRANSAKSI.VARIAN] || "") +
+        " — Rp " + ((lastData[COL.TRANSAKSI.TOTAL] || 0).toLocaleString("id-ID")));
     }
   }
 
-  // Row 4: Pendapatan Hari Ini (from Pendapatan sheet)
+  // Row 4: Pendapatan Hari Ini (Revenue from Pendapatan B6)
   var shPen = getSheet(SHEET.PENDAPATAN);
   if (shPen) {
-    var penVal = shPen.getRange("B8").getValue() || 0;
-    sh.getRange("B4:D4").merge().setValue("Rp " + Number(penVal).toLocaleString("id-ID"))
-      .setFontSize(10).setFontColor(C.DARK);
+    var rev = Number(shPen.getRange("B6").getValue()) || 0;
+    setDash(4, "Rp " + rev.toLocaleString("id-ID"));
   }
 
-  // Row 5: Item Stok Menipis
+  // Row 5: Laba Bersih (Net Profit from Pendapatan B18)
+  if (shPen) {
+    var net = Number(shPen.getRange("B18").getValue()) || 0;
+    setDash(5, "Rp " + net.toLocaleString("id-ID"), net >= 0 ? C.GREEN : C.RED);
+  }
+
+  // Row 6: Total Order Hari Ini
+  if (shTrx) {
+    var today = fmtDate(new Date());
+    var count = 0;
+    if (trxLast > 2) {
+      var trxData = shTrx.getRange(3, COLx(COL.TRANSAKSI.TGL), trxLast - 2, 1).getValues();
+      for (var ti = 0; ti < trxData.length; ti++) {
+        if (fmtDate(trxData[ti][0]) === today) count++;
+      }
+    }
+    setDash(6, count + " transaksi");
+  }
+
+  // Row 7: Item Stok Menipis
   var shStock = getSheet(SHEET.STOCK);
   if (shStock) {
     var stockLast = shStock.getLastRow();
     var lowStock = [];
     if (stockLast > 1) {
       var stockData = shStock.getRange(2, 1, stockLast - 1, 8).getValues();
-      for (var i = 0; i < stockData.length; i++) {
-        var sisa = Number(stockData[i][COL.STOCK.SISA]) || 0;
-        var min = Number(stockData[i][COL.STOCK.MIN]) || 0;
-        if (min > 0 && sisa <= min) {
-          lowStock.push(stockData[i][COL.STOCK.NAMA]);
+      for (var si = 0; si < stockData.length; si++) {
+        var sisa = Number(stockData[si][COL.STOCK.SISA]) || 0;
+        var min = Number(stockData[si][COL.STOCK.MIN]) || 0;
+        if (min > 0 && sisa <= min) lowStock.push(stockData[si][COL.STOCK.NAMA]);
+      }
+    }
+    setDash(7, lowStock.length === 0 ? "✅ Semua stok aman" : "⚠ " + lowStock.join(", "),
+      lowStock.length === 0 ? C.GREEN : C.RED);
+  }
+
+  // Row 8: Total Aset Tetap
+  var shAset = getSheet(SHEET.ASET);
+  if (shAset) {
+    var asetLast = shAset.getLastRow();
+    var totalAset = 0;
+    if (asetLast >= 5) {
+      var asetData = shAset.getRange(5, COLx(COL.ASET.HARGA), asetLast - 4, 1).getValues();
+      for (var ai = 0; ai < asetData.length; ai++) totalAset += Number(asetData[ai][0]) || 0;
+    }
+    setDash(8, "Rp " + totalAset.toLocaleString("id-ID"));
+  }
+
+  // Row 9: OPEX Bulan Ini
+  var shPenel = getSheet(SHEET.PENGELUARAN);
+  if (shPenel) {
+    var penelLast = shPenel.getLastRow();
+    var opexBln = 0, now = new Date(), bln = ("0" + (now.getMonth() + 1)).slice(-2), thn = now.getFullYear();
+    if (penelLast >= 4) {
+      var penelData = shPenel.getRange(4, 1, penelLast - 3, 7).getValues();
+      for (var pi = 0; pi < penelData.length; pi++) {
+        if (String(penelData[pi][COL.PENGELUARAN.KATEGORI]).trim() !== "Operasional") continue;
+        var parts = String(penelData[pi][COL.PENGELUARAN.TGL]).split("/");
+        if (parts.length === 3 && parts[1] == bln && parts[2] == thn) {
+          opexBln += Number(penelData[pi][COL.PENGELUARAN.TOTAL]) || 0;
         }
       }
     }
-    var stokMsg = lowStock.length === 0 ? "✅ Semua stok aman" : "⚠ " + lowStock.join(", ");
-    sh.getRange("B5:D5").merge().setValue(stokMsg)
-      .setFontColor(lowStock.length === 0 ? C.GREEN : C.RED).setFontSize(10);
+    setDash(9, "Rp " + opexBln.toLocaleString("id-ID"));
   }
 
-  // Row 6: Saldo PC
+  // Row 10: Saldo PC
   var saldoPC = getSaldoPC();
-  sh.getRange("B6:D6").merge().setValue("Rp " + (saldoPC || 0).toLocaleString("id-ID"))
-    .setFontSize(10).setFontColor(saldoPC > 0 ? C.GREEN : C.RED);
+  setDash(10, "Rp " + (saldoPC || 0).toLocaleString("id-ID"), saldoPC > 0 ? C.GREEN : C.RED);
 
-  // Row 7: Saldo UB
+  // Row 11: Saldo UB
   var saldoUB = getSaldoUB();
-  sh.getRange("B7:D7").merge().setValue("Rp " + (saldoUB || 0).toLocaleString("id-ID"))
-    .setFontSize(10).setFontColor(saldoUB >= 10000 ? C.GREEN : C.RED);
+  setDash(11, "Rp " + (saldoUB || 0).toLocaleString("id-ID"), saldoUB >= 10000 ? C.GREEN : C.RED);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
