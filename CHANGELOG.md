@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.3.0] — 2026-06-01
+
+### Added — Multi-Level P&L System
+
+- **5-Level P&L (Revenue → Gross Profit → EBITDA → EBIT → Net Profit)** — Struktur laporan laba/rugi penuh dengan 5 level:
+  - HPP breakdown per kategori: **Bahan Utama, Topping, Bahan Pendukung, Kemasan** (dari BOM → mapping kategori Bahan)
+  - Gross Profit = Revenue − Total HPP
+  - EBITDA = Gross Profit − OPEX (dari Pengeluaran)
+  - EBIT = EBITDA − Depresiasi (dari Aset)
+  - Net Profit = EBIT − Pajak (default 0% — UMKM)
+  - Column layout: 15 kolom di Pendapatan + P&L Hari Ini rows 4-19
+
+- **`getHPPBreakdown()`** — Hitung HPP per kategori untuk varian + topping
+- **`_getHPPCatCache()`** — Cache per-produk per-kategori HPP (1 jam TTL), built from Resep BOM + Bahan mapping
+- **`getCategoryForBahan()`** — Mapping BOM ingredient → kategori HPP (Bahan Utama/Topping/Bahan Pendukung/Kemasan)
+- **`getBahanHargaMap()`** — Helper map harga per satuan semua bahan
+
+### Added — Aset Tetap & Depresiasi
+
+- **NEW `src/Aset.gs`** — Fixed asset register module:
+  - `buildAset()` — Sheet Aset dengan 9 kolom: Nama, Kategori, Tgl Beli, Harga Perolehan, Umur (bln), Nilai Residu, Penyusutan/bln (formula), Akum. Penyusutan, Nilai Buku (formula)
+  - `addAset()` — HTML dialog tambah aset (Nama, Kategori, Tgl, Harga, Umur, Residu)
+  - `postingDepresiasi()` — Posting penyusutan bulan ini ke akumulasi + refresh laporan
+  - `getTotalDepresiasi()` — Hitung total depresiasi per bulan (digunakan di P&L)
+
+### Changed
+
+- **`buildPendapatan()`** — Rewrite total: P&L Hari Ini 5-level (14 baris, 3 kolom), Rekap Harian 15 kolom, Rekap Bulanan 15 kolom, Kas status di baris 21-22
+- **`refreshLaporan()`** — Rewrite total: agregasi HPP per kategori (bukan total saja), OPEX harian, depresiasi per bulan, 15 kolom daily/monthly rekaps
+- **`clearDynamicCache()`** — Juga clear `HPP_CAT_CACHE` + `HPP_CACHE`
+- **`setupPOS()`** — Build Aset sheet setelah Audit, sebelum Pendapatan
+- **`Triggers.gs` menu** — +2 item: 📦 Tambah Aset Tetap, 📉 Posting Penyusutan
+
+### Configuration
+
+- **Config.gs**: `COL.PENDAPATAN` 6→15 columns, new `COL.ASET`, `SHEET.ASET`, `PAJAK_PERSEN` (0), `KATEGORI_HPP_MAP`
+- **Builders.gs**: Sheet order includes "Aset" (11 sheets total)
+
+---
+
 ## [1.2.0] — 2026-05-30
 
 ### Added — Stock-Aware POS Dropdown

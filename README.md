@@ -1,6 +1,6 @@
 # CanvaPOS
 
-**Point-of-Sale System untuk Google Sheets** — Dirancang untuk usaha minuman skala kecil (Pop Ice blender, kopi tubruk, es teh) dengan manajemen stok berbasis Bill of Materials (BOM). **13 file modular, deployed ke production.**
+**Point-of-Sale System untuk Google Sheets** — Dirancang untuk usaha minuman skala kecil (Pop Ice blender, kopi tubruk, es teh) dengan manajemen stok berbasis Bill of Materials (BOM) dan laporan laba/rugi multi-level. **14 file modular, deployed ke production.**
 
 ## Fitur
 
@@ -8,10 +8,10 @@
 - **Hitung Otomatis** — Harga base (Rp 5.000) + topping (Rp 1.000/jenis) terhitung real-time
 - **Transaksi Log** — Setiap pesanan tersimpan dengan timestamp, kasir, dan detail lengkap
 - **Manajemen Stok** — Stok bahan terpotong otomatis berdasarkan BOM setiap transaksi
-- **Laporan Laba/Rugi** — Rekap harian & bulanan dengan perhitungan HPP dari BOM
+- **Laporan Laba/Rugi 5-Level** — Revenue → HPP breakdown (4 kategori BOM) → Gross Profit → OPEX → EBITDA → Depresiasi → EBIT → Pajak → Net Profit
 - **Manajemen Kas** — Petty Cash (PC) & Uang Belanja (UB) dengan saldo otomatis
 - **Catatan Pengeluaran** — Sync otomatis ke stok + indikator status stok
-- **Dialog Interaktif** — Pilihan topping, date picker, tambah resep via popup
+- **Dialog Interaktif** — Pilihan topping, date picker, tambah resep, tambah aset via popup
 - **Custom Menu** — Menu `🧋 POS` muncul otomatis saat spreadsheet dibuka
 
 ## Persyaratan
@@ -53,7 +53,7 @@ clasp open
 
 > Jika `setupPOS()` timeout, jalankan fungsi satu per satu (lihat menu POS → Setup Partial).
 
-## Struktur Sheet (10 Sheets)
+## Struktur Sheet (11 Sheets)
 
 | Sheet | Fungsi |
 |---|---|
@@ -61,11 +61,12 @@ clasp open
 | **POS** | Input pesanan utama |
 | **Stock** | Monitoring stok bahan + restock alert |
 | **Transaksi** | Log history transaksi |
-| **Pendapatan** | Laporan laba/rugi harian & bulanan |
+| **Pendapatan** | Laporan laba/rugi 5-level (harian & bulanan) |
 | **Pengeluaran** | Catatan pembelian & biaya operasional |
 | **Kas** | Tracking Petty Cash & Uang Belanja |
 | **Bahan** | Master data bahan baku (harga, ukuran) |
 | **Resep** | Bill of Materials — komposisi setiap produk |
+| **Aset** | Daftar aset tetap & penyusutan |
 | **Audit** | Hidden log aktivitas (90-day retention) |
 
 ## Menu `🧋 POS`
@@ -90,6 +91,8 @@ clasp open
 | 🛒 Top Up UB (jika < Rp 10.000) | Top up UB otomatis |
 | 📅 Init Saldo Awal PC & UB | Set saldo awal harian |
 | 📅 Pilih Tanggal (cell aktif) | Date picker untuk cell aktif |
+| 📦 Tambah Aset Tetap | Dialog tambah aset tetap baru |
+| 📉 Posting Penyusutan | Posting depresiasi bulan ini |
 | 🔧 Setup Ulang (reset semua) | Reset semua sheet |
 | 🔒 Proteksi Semua Sheet | Proteksi formula & header |
 | 🔓 Unprotect Semua Sheet | Hapus semua proteksi |
@@ -108,7 +111,7 @@ clasp open
 - **Storage:** Spreadsheet rows + PropertiesService + CacheService
 - **Trigger:** `onEdit`, `onSelectionChange`, `onOpen`
 - **Concurrency:** LockService wrapper (`withLock()`) — aman multi-user
-- **Deploy:** clasp push — 13 file modular ke GAS project
+- **Deploy:** clasp push — 14 file modular ke GAS project
 - **Harga:** Rp 5.000/cup, Rp 1.000/jenis topping
 
 ## Script ID

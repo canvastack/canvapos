@@ -20,7 +20,7 @@
 
 ### 1.1 Gambaran Umum
 
-CanvaPOS adalah **Google Apps Script modular** (~4.330 baris, 13 file) yang berjalan di Google Sheets. Tidak ada dependency eksternal — deploy via clasp ke Apps Script project.
+CanvaPOS adalah **Google Apps Script modular** (~4.900 baris, 14 file) yang berjalan di Google Sheets. Tidak ada dependency eksternal — deploy via clasp ke Apps Script project.
 
 ### 1.2 Alur Data
 
@@ -39,20 +39,21 @@ CanvaPOS adalah **Google Apps Script modular** (~4.330 baris, 13 file) yang berj
                       (template-based)
 ```
 
-### 1.3 Struktur File (13 File)
+### 1.3 Struktur File (14 File)
 
 ```
 CanvaPOS.gs          — Legacy data arrays (274 baris)
 src/
 ├── appsscript.json       — Manifest (oauthScopes, runtime, timezone)
-├── Config.gs             — Konstanta global (HARGA_BASE, COL, SHEET, env)
-├── Helpers.gs            — Utility: UnitConverter, timers, styling, LockService
+├── Config.gs             — Konstanta global (HARGA_BASE, COL, SHEET, env, PAJAK, KATEGORI_HPP_MAP)
+├── Helpers.gs            — Utility: UnitConverter, timers, styling, LockService, category mapping
 ├── Builders.gs           — Semua sheet builder + setupPOS + protect + backup + named ranges
 ├── POS.gs                — addRowPOS, clearPOS, pilihTopping, deleteRowPOS, safeClear
 ├── Transaction.gs        — simpanTransaksi (3-phase), stockEngineBOM, TRX counter
 ├── Pengeluaran.gs        — Expense tracking, sync to Stock, auto-fill, unit validation
 ├── Kas.gs                — Petty Cash (PC) & Uang Belanja (UB) tracking
-├── Laporan.gs            — Pendapatan builder, getHPPLookup (cached), refreshLaporan
+├── Aset.gs               — Fixed asset register & depresiasi (NEW)
+├── Laporan.gs            — Pendapatan builder (5-level P&L), getHPPLookup (cached), HPP category breakdown, refreshLaporan
 ├── Triggers.gs           — onOpen (menu), onEdit, onSelectionChange, trigger installer
 ├── Dialogs.gs            — Multi-select dialog, date picker, tambah resep, onboarding, env picker
 └── data/
@@ -221,6 +222,8 @@ Retensi: 90 hari (auto-clean via `cleanAuditLog()`)
 | `HPP_PER_TOP` | 80 | Estimasi HPP per topping (fallback BOM) |
 | `POS_START_ROW` | 7 | Baris pertama data order di POS |
 | `POS_INIT_ROWS` | 5 | Jumlah baris order awal |
+| `PAJAK_PERSEN` | 0 | Default 0% (UMKM omzet < 500jt — UU HPP) |
+| `KATEGORI_HPP_MAP` | `{...}` | Mapping Bahan kategori → HPP kategori |
 
 ### 3.2 COL Constants (0-based, column indices)
 
@@ -233,7 +236,8 @@ var COL = {
   STOCK:       { KATEGORI:0, NAMA:1, SATUAN:2, STOK_AWAL:3, TERJUAL:4, SISA:5, MIN:6, STATUS:7 },
   PENGELUARAN: { TGL:0, KATEGORI:1, NAMA:2, SATUAN:3, JUMLAH:4, HARGA:5, TOTAL:6, STATUS:7 },
   KAS:         { TGL:0, KATEGORI:1, JENIS:2, KET:3, JUMLAH:4, SALDO:5 },
-  PENDAPATAN:  { LABEL:1, TRX:2, CUP:3, PENDAPATAN:4, HPP:5, LABA:6 },
+  PENDAPATAN:  { LABEL:0, TRX:1, CUP:2, REVENUE:3, HPP_BAHAN:4, HPP_TOPPING:5, HPP_SUPPORT:6, HPP_KEMASAN:7, GROSS_PROFIT:8, OPEX:9, EBITDA:10, DEPRESIASI:11, EBIT:12, PAJAK:13, NET_PROFIT:14 },
+  ASET:        { NAMA:0, KATEGORI:1, TGL_BELI:2, HARGA:3, UMUR:4, RESIDU:5, DEPRESIASI_BLN:6, AKUMULASI:7, NILAI_BUKU:8 },
 };
 function COLx(c) { return c + 1; }
 ```
@@ -244,7 +248,7 @@ function COLx(c) { return c + 1; }
 var SHEET = {
   PANDUAN: "Panduan", POS: "POS", STOCK: "Stock", TRANSAKSI: "Transaksi",
   PENDAPATAN: "Pendapatan", PENGELUARAN: "Pengeluaran", BAHAN: "Bahan",
-  RESEP: "Resep", KAS: "Kas", AUDIT: "Audit"
+  RESEP: "Resep", KAS: "Kas", ASET: "Aset", AUDIT: "Audit"
 };
 ```
 
@@ -280,6 +284,7 @@ UnitConverter.baseUnit(unit)                   // → "Gram" / "ml"
 | `getVarianList()` | `CACHED_VARIAN_LIST` | Per session (clear on Bahan edit) |
 | `getToppingList()` | `CACHED_TOPPING_LIST` | Per session (clear on Bahan edit) |
 | `getHPPLookup()` | PropertiesService (HPP_CACHE) | 1 jam TTL |
+| `_getHPPCatCache()` | PropertiesService (HPP_CAT_CACHE) | 1 jam TTL |
 
 ---
 
@@ -292,7 +297,7 @@ Fungsi utama yang membangun seluruh workbook:
 1. Set timezone `Asia/Jakarta`
 2. Hapus semua sheet existing (Panduan, POS, Stock, Transaksi, Pendapatan, Pengeluaran, Kas, Bahan, Resep, Audit)
 3. Build sheet berurutan (dengan `SpreadsheetApp.flush()` tiap step):
-   `Bahan → Resep → Transaksi → Stock → Pengeluaran → Kas → Audit → Pendapatan → POS → Panduan`
+   `Bahan → Resep → Transaksi → Stock → Pengeluaran → Kas → Audit → **Aset** → Pendapatan → POS → Panduan`
 4. Reorder sheet
 5. Auto-protect semua formula cells via `protectAll()`
 6. Setup named ranges via `setupNamedRanges()`
@@ -378,14 +383,55 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 
 - **Tab color:** Red (#E74C3C)
 - **Frozen rows:** 1
-- **Sections:**
-  - Baris 1: Judul
-  - Baris 2: Petunjuk refresh
-  - Baris 4-11: Ringkasan Hari Ini (formula + BOM HPP)
-  - Baris 12-13: Status Kas (LOOKUP ke sheet Kas)
-  - Baris 15-16: Header Rekap Harian
-  - Baris 17+: Data rekap harian (dinamis dari `refreshLaporan()`)
-  - Setelah rekap harian + 2 baris: Header Rekap Bulanan + data
+- **Layout — 5-Level P&L:**
+
+**P&L Hari Ini (baris 4-19, 15 kolom):**
+
+| Baris | Label | Kolom B (Rp) | Sumber |
+|---|---|---|---|
+| 5 | 📅 Tanggal | `TODAY()` | Formula |
+| 6 | 💵 **Total Pendapatan** | Revenue | SUMIF TRX_Tgl |
+| 7 | 📦 HPP – Bahan Utama | BOM category | `refreshLaporan()` |
+| 8 | 🧀 HPP – Topping | BOM category | `refreshLaporan()` |
+| 9 | ⚙️ HPP – Bahan Pendukung | BOM category | `refreshLaporan()` |
+| 10 | 📋 HPP – Kemasan | BOM category | `refreshLaporan()` |
+| 11 | 📊 **Total HPP (BOM)** | Formula | `=SUM(B7:B10)` |
+| 12 | 📈 **Laba Kotor (Gross Profit)** | Formula | `=B6-B11` |
+| 13 | 💸 Biaya Operasional (OPEX) | Pengeluaran | `_getOPEXPerDay()` |
+| 14 | 📊 **EBITDA** | Formula | `=B12-B13` |
+| 15 | 🏭 Penyusutan (Depresiasi) | Aset | `getTotalDepresiasi()` |
+| 16 | 📊 **EBIT** | Formula | `=B14-B15` |
+| 17 | 🏛️ Pajak (0%) | Formula | `=B16*PAJAK_PERSEN` |
+| 18 | 🏆 **Laba Bersih (Net Profit)** | Formula | `=B16-B17` |
+| 19 | 📊 Margin Laba Bersih | % | `=B18/B6*100` |
+
+Kolom C: % indicator untuk Revenue & Net Profit.
+
+**Status Kas (baris 21-22):** PC dan UB — LOOKUP dari sheet Kas
+
+**Rekap Harian (baris 25+, 15 kolom):**
+
+| Kolom | Label |
+|---|---|
+| A | Tanggal |
+| B | Trx |
+| C | Cup |
+| D | Pendapatan |
+| E | HPP Utama |
+| F | HPP Top |
+| G | HPP Support |
+| H | HPP Kemasan |
+| I | Laba Kotor |
+| J | OPEX |
+| K | EBITDA |
+| L | Depresiasi |
+| M | EBIT |
+| N | Pajak |
+| O | Laba Bersih |
+
+**Rekap Bulanan:** Struktur 15 kolom yang sama, setelah rekap harian + spacer.
+
+> **v1.3 change:** Struktur Pendapatan dirombak total dari 6 kolom (Tanggal, Trx, Cup, Pendapatan, HPP, Laba) menjadi 15 kolom dengan breakdown HPP per kategori dan 5-level P&L. Ringkasan Hari Ini diganti dengan P&L Hari Ini yang komprehensif.
 
 ### 5.6 POS (Build: `buildPOS`)
 
@@ -432,6 +478,27 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 - **4 kolom:** Timestamp, User, Action, Detail
 - **Retensi:** 90 hari (auto-clean di `onOpen()`)
 - **Frozen rows:** 1
+
+### 5.11 Aset (Build: `buildAset`) — NEW
+
+- **Tab color:** Grey (#95A5A6)
+- **Frozen rows:** 4
+- **Ringkasan:** Baris 3 — total penyusutan bulan ini (formula SUM)
+- **9 kolom:**
+
+| Kolom | Header | Tipe | Deskripsi |
+|---|---|---|---|
+| A | Nama Aset | String | Nama aset |
+| B | Kategori | String | Peralatan, Elektronik, Furniture, dll |
+| C | Tgl Beli | Date | DD/MM/YYYY |
+| D | Harga Perolehan | Number (Rp) | Harga beli aset |
+| E | Umur (bln) | Number | Umur ekonomis dalam bulan |
+| F | Nilai Residu | Number (Rp) | Nilai sisa |
+| G | Penyusutan/bln | Formula | `=ROUND((D-F)/E,0)` — straight-line |
+| H | Akum. Penyusutan | Number (Rp) | Diupdate via `postingDepresiasi()` |
+| I | Nilai Buku | Formula | `=D-H` |
+
+- **Input:** Baris 5+ — diisi via `addAset()` dialog atau manual
 
 ---
 
@@ -530,17 +597,33 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 
 ### 6.9 `refreshLaporan()` — `src/Laporan.gs`
 
-**Flow:**
+**Flow (Multi-Level P&L):**
 
-1. HPP lookup dari BOM via `getHPPLookup()` (cached 1 jam)
+1. **HPP Category Cache:** `_getHPPCatCache()` — baca BOM + Bahan, mapping per kategori per menu (cached 1 jam)
 2. Baca semua data Transaksi (baris 3+)
-3. Agregat per hari: `hariMap[tanggal] = {trx, cup, pendapatan, hppBahan}`
-4. Baca Pengeluaran per hari, tambahkan ke `hariMap.pengeluaran`
+3. **Agregat per hari — breakdown kategori:**
+   `hariMap[tgl] = {trx, cup, revenue, hppUtama, hppTop, hppSupport, hppKemasan, opex}`
+4. **OPEX harian:** `_getOPEXPerDay()` — scan Pengeluaran per tanggal
 5. Agregat per bulan: `bulanMap[MM/YYYY]`
-6. Update Ringkasan Hari Ini (baris 5-11) dengan BOM HPP
-7. Tulis Rekap Harian (baris 17+)
-8. Tulis Rekap Bulanan (dinamis, setelah rekap harian + spacer)
+6. **Update P&L Hari Ini** (baris 6-19):
+   - Revenue → HPP×4 → Gross Profit → OPEX → EBITDA → Depresiasi → EBIT → Pajak → Net Profit → Margin%
+   - Data diisi di kolom B (Rp), kolom C untuk %
+   - Depresiasi dari `getTotalDepresiasi()`
+7. Tulis **Rekap Harian** 15 kolom (baris 26+) — setiap baris = 1 hari
+8. Tulis **Rekap Bulanan** 15 kolom (setelah rekap harian + spacer)
 9. Tampilkan alert diagnostic
+
+**P&L Formulas:**
+```
+Gross Profit  = Revenue − Total HPP
+EBITDA        = Gross Profit − OPEX
+EBIT          = EBITDA − Depresiasi
+Net Profit    = EBIT − Pajak
+Pajak         = EBIT × PAJAK_PERSEN
+Margin        = Net Profit / Revenue × 100
+```
+
+**Fallback:** Jika BOM lookup gagal, HPP kategori = `HPP_PER_CUP` (2200) per cup di Bahan Utama.
 
 ### 6.10 Cash Management — `src/Kas.gs`
 
@@ -555,27 +638,39 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 | `topUpUB()` | Top Up UB jika < Rp 10.000 |
 | `initSaldoKas()` | Set saldo awal harian (cegah duplikat) |
 
-### 6.11 Safe Clear & Restore — `src/POS.gs`
+### 6.11 Asset Management — `src/Aset.gs` (NEW)
+
+| Fungsi | Deskripsi |
+|---|---|
+| `buildAset(ss)` | Bangun sheet Aset (9 kolom, ringkasan, header) |
+| `addAset()` | HTML dialog tambah aset (Nama, Kategori, Tgl, Harga, Umur, Residu) |
+| `addAsetSave(data)` | Simpan aset dari form dialog ke sheet Aset |
+| `getTotalDepresiasi(bulan?)` | Hitung total penyusutan per bulan (default: bulan berjalan) |
+| `postingDepresiasi()` | Posting depresiasi ke akumulasi + refresh laporan |
+
+**Depresiasi Method:** Straight-line — `ROUND((Harga Perolehan − Nilai Residu) / Umur, 0)` per bulan.
+
+### 6.12 Safe Clear & Restore — `src/POS.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
 | `safeClearPOS()` | Backup data POS ke PropertiesService lalu clear |
 | `restorePOSFromBackup()` | Pulihkan data dari backup terakhir |
 
-### 6.12 Dashboard — `src/Builders.gs`
+### 6.13 Dashboard — `src/Builders.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
 | `refreshDashboard()` | Update 6 metric di Panduan baris 2-7 |
 
-### 6.13 Sheet Protection — `src/Builders.gs`
+### 6.14 Sheet Protection — `src/Builders.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
-| `protectAll(adminEmail?)` | Proteksi formula cells di semua 10 sheet |
+| `protectAll(adminEmail?)` | Proteksi formula cells di semua 11 sheet |
 | `unprotectAll(adminEmail?)` | Hapus semua proteksi |
 
-### 6.14 Backup — `src/Builders.gs`
+### 6.15 Backup — `src/Builders.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
@@ -583,7 +678,7 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 | `cleanBackups(maxAgeDays=7)` | Hapus backup > 7 hari |
 | `setupBackupTrigger(hour=2)` | Daily backup otomatis |
 
-### 6.15 Named Ranges — `src/Builders.gs`
+### 6.16 Named Ranges — `src/Builders.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
@@ -591,7 +686,7 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 | `refreshNamedRanges()` | Update ke ukuran data aktual |
 | `clearNamedRanges()` | Hapus semua named range |
 
-### 6.16 Environment — `src/Config.gs`
+### 6.17 Environment — `src/Config.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
@@ -601,14 +696,14 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 | `setupEnv(env)` | Setup + refresh protection/named ranges |
 | `showEnvPicker()` | HTML dialog pilih environment |
 
-### 6.17 Audit — `src/Builders.gs`
+### 6.18 Audit — `src/Builders.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
 | `auditLog(action, detail)` | Catat aktivitas ke sheet Audit |
 | `cleanAuditLog()` | Hapus log > 90 hari |
 
-### 6.18 Sync Functions — `src/Triggers.gs`
+### 6.19 Sync Functions — `src/Triggers.gs`
 
 | Fungsi | Deskripsi |
 |---|---|
@@ -622,7 +717,7 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 
 ### 7.1 `onOpen()` — Custom Menu
 
-Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan 30 item:
+Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan 34 item:
 
 ```
 💾 Simpan Transaksi
@@ -649,6 +744,9 @@ Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan
 🛒 Top Up UB (jika < Rp 10.000)
 📅 Init Saldo Awal PC & UB
 📅 Pilih Tanggal (cell aktif)
+──────────
+📦 Tambah Aset Tetap
+📉 Posting Penyusutan
 ──────────
 🔧 Setup Ulang (reset semua)
 🔒 Proteksi Semua Sheet
@@ -788,17 +886,30 @@ POP_ICE_TEMPLATE (7 ingredients) × 18 variants = 144 rows
 3. Cache di PropertiesService (1 jam TTL)
 4. Auto-clear saat Bahan/Resep diedit
 
-### 9.3 HPP di `refreshLaporan()`
+### 9.3 HPP di `refreshLaporan()` (v1.3 — Multi-Level P&L)
 
 ```
-hppProduk  = hppLookup[varian] × jumlahCup
-hppTopping = Σ(hppLookup[tiapTopping]) × jumlahCup
-totalHPP   = hppProduk + hppTopping
+— Per kategori dari BOM —
+hppUtama   = Σ(BOM[varian].kategori "Bahan Utama") × qty
+hppTop     = Σ(BOM[varian].kategori "Topping") × qty
+hppSupport = Σ(BOM[varian].kategori "Bahan Pendukung") × qty
+hppKemasan = Σ(BOM[varian].kategori "Kemasan") × qty
+
+— Topping juga di-breakdown per kategori —
+totalHPP   = hppUtama + hppTop + hppSupport + hppKemasan
+
+— 5-Level P&L —
+Gross Profit = Revenue − totalHPP
+EBITDA       = Gross Profit − OPEX
+EBIT         = EBITDA − Depresiasi
+Net Profit   = EBIT − Pajak
 ```
 
-**Fallback:** Gunakan konstanta `HPP_PER_CUP` (2200) dan `HPP_PER_TOP` (80) jika BOM lookup gagal.
+**Breakdown sumber:** `_getHPPCatCache()` mapping per menu dari Resep × Bahan, dikelompokkan via `getCategoryForBahan()`.
 
-**Catatan:** HPP = Bahan baku ONLY. Biaya operasional TIDAK termasuk HPP.
+**Fallback:** Gunakan konstanta `HPP_PER_CUP` (2200) di kategori Bahan Utama jika BOM lookup gagal.
+
+**Catatan:** HPP = Bahan baku ONLY. Biaya operasional (OPEX) dipisah di level EBITDA.
 
 ### 9.4 BOM Stock Engine
 
@@ -850,14 +961,19 @@ totalHPP   = hppProduk + hppTopping
 
 ### 10.6 Laporan
 
-Klik **🧋 POS → 🔄 Refresh Laporan Pendapatan** — update Ringkasan Harian, Rekap Harian, dan Bulanan.
+Klik **🧋 POS → 🔄 Refresh Laporan Pendapatan** — update P&L Hari Ini, Rekap Harian (15 kolom), dan Bulanan.
 
-### 10.7 Backup
+### 10.7 Manajemen Aset
+
+- **Tambah Aset:** **🧋 POS → 📦 Tambah Aset Tetap** — isi Nama, Kategori, Tanggal Beli, Harga, Umur, Residu
+- **Depresiasi:** Setiap awal bulan, **🧋 POS → 📉 Posting Penyusutan** — akumulasi + refresh P&L
+
+### 10.8 Backup
 
 - **Manual:** **🧋 POS → 📀 Backup Sekarang**
 - **Otomatis:** **🧋 POS → ⏰ Atur Backup Otomatis** (daily jam 02:00, retensi 7 hari)
 
-### 10.8 Setup Ulang
+### 10.9 Setup Ulang
 
 **🧋 POS → 🔧 Setup Ulang (reset semua)** — HAPUS SEMUA data.
 
@@ -889,7 +1005,7 @@ var HARGA_TOPPING = 1000;
 
 ```bash
 clasp login                    # OAuth via browser
-clasp push                     # Push 13 files ke Apps Script
+clasp push                     # Push 14 files ke Apps Script
 clasp deployments              # Lihat deployment ID
 ```
 
