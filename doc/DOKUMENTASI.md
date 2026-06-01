@@ -391,7 +391,7 @@ Jika `setupPOS()` timeout (6 menit batas Apps Script):
 | Baris | Label | Kolom B (Rp) | Sumber |
 |---|---|---|---|
 | 5 | 📅 Tanggal | `TODAY()` | Formula |
-| 6 | 💵 **Total Pendapatan** | Revenue | SUMIF TRX_Tgl |
+| 6 | 💵 **Total Pendapatan** | Revenue | SUMIF TRX_Tgl *(live formula)* |
 | 7 | 📦 HPP – Bahan Utama | BOM category | `refreshLaporan()` |
 | 8 | 🧀 HPP – Topping | BOM category | `refreshLaporan()` |
 | 9 | ⚙️ HPP – Bahan Pendukung | BOM category | `refreshLaporan()` |
@@ -473,7 +473,7 @@ Kolom C: % indicator untuk Revenue & Net Profit.
   - Baris 1-11: **Dashboard** (System Health, Transaksi Terakhir, Pendapatan Hari Ini, Laba Bersih, Total Order, Stok Menipis, Total Aset, OPEX Bulan Ini, Saldo PC/UB) — 11 metrik, update via `refreshDashboard()`
   - Baris 13-17: **⚙️ Konfigurasi Sistem** — display constants: Harga Jual (5rb), Topping (1rb), Pajak (0%), HPP(2.200/80)
   - Baris 19: **📖 Panduan Penggunaan** header
-  - Baris 20+: Cara Pakai (9 langkah), Harga & P&L 5-level reference, Menu Reference (34 item), **📏 Unit Input Guide** (18 baris — tambah Gooday, Chocolatos, ABC Klepon, Tissue), BOM & HPP explanation (5-level P&L), **👤 Sheet Reference** (11 sheets)
+  - Baris 20+: Cara Pakai (9 langkah), Harga & P&L 5-level reference, Menu Reference (35 item), **📏 Unit Input Guide** (18 baris — tambah Gooday, Chocolatos, ABC Klepon, Tissue), BOM & HPP explanation (5-level P&L), **👤 Sheet Reference** (11 sheets)
 
 ### 5.10 Audit (Build: `buildAudit`)
 
@@ -721,56 +721,14 @@ Margin        = Net Profit / Revenue × 100
 
 ### 7.1 `onOpen()` — Custom Menu
 
-Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan 34 item:
+Terpanggil otomatis saat spreadsheet dibuka. Mendaftarkan menu `🧋 POS` dengan 35 item:
 
 ```
-💾 Simpan Transaksi
-➕ Add Row
-🍬 Pilih Topping (baris aktif)
-──────────
-🗑 Clear POS
-♻ Safe Clear (backup dulu)
-↩ Restore POS dari Backup
-──────────
-💸 Simpan & Sync Stok (Pengeluaran)
-➕ Add Row Pengeluaran
-🔧 Fix Formula Total (atasi #REF!)
-💸 Sinkronisasi Dropdown Pengeluaran
-🔄 Refresh Laporan Pendapatan
-📊 Refresh Dashboard
-──────────
-🗑 Hapus Baris Aktif (POS)
-──────────
-➕ Tambah Resep / BOM
-🔄 Sync Data Resep
-──────────
-💰 Top Up PC ke Rp 100.000
-🛒 Top Up UB (jika < Rp 10.000)
-📅 Init Saldo Awal PC & UB
-📅 Pilih Tanggal (cell aktif)
-──────────
-📦 Tambah Aset Tetap
-📉 Posting Penyusutan
-🔄 Sync Modal Awal → Aset + Kas
-──────────
-🔧 Setup Ulang (reset semua)
-🔒 Proteksi Semua Sheet
-🔓 Unprotect Semua Sheet
-──────────
-📀 Backup Sekarang
-⏰ Atur Backup Otomatis
-📂 Lihat Backup
-♻ Restore dari Backup
-──────────
-🚀 Onboarding Wizard
-──────────
-📦 Migrasi Stok (Awal → Masuk)
-🏷️ Refresh Named Ranges
-──────────
-🌐 Set Environment…
-──────────
-⚡ Install Auto-Fix Trigger
+...
+┌──────────────────────────────┐
 ```
+
+> ⚡ Install Auto-Fix Trigger *(auto-installed saat setupPOS)* sudah auto-installed via `setupPOS()`. Menu ini tetap ada sebagai fallback manual.
 
 Juga menjalankan: `cleanAuditLog()`, `cleanBackups()`, `refreshDashboard()`.
 

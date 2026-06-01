@@ -55,19 +55,19 @@ clasp open
 
 ## Struktur Sheet (11 Sheets)
 
-| Sheet | Fungsi |
-|---|---|
-| **Panduan** | Manual pengguna + Dashboard sistem |
-| **POS** | Input pesanan utama |
-| **Stock** | Monitoring stok bahan + restock alert |
-| **Transaksi** | Log history transaksi |
-| **Pendapatan** | Laporan laba/rugi 5-level (harian & bulanan) |
-| **Pengeluaran** | Catatan pembelian & biaya operasional |
-| **Kas** | Tracking Petty Cash & Uang Belanja |
-| **Bahan** | Master data bahan baku (harga, ukuran) |
-| **Resep** | Bill of Materials — komposisi setiap produk |
-| **Aset** | Daftar aset tetap & penyusutan |
-| **Audit** | Hidden log aktivitas (90-day retention) |
+| Sheet | Fungsi | Fase |
+|-------|--------|------|
+| **Panduan** | Dashboard + Manual pengguna | 🔝 Referensi |
+| **Bahan** | Master data bahan baku (harga, ukuran) | ⚙️ Config |
+| **Resep** | Bill of Materials — komposisi setiap produk | ⚙️ Config |
+| **Kas** | Tracking Petty Cash & Uang Belanja | 🌅 Pre-Op |
+| **Stock** | Monitoring stok bahan + restock alert | 🌅 Pre-Op |
+| **Pengeluaran** | Catatan pembelian & biaya operasional | 🏪 Operasi |
+| **POS** | Input pesanan utama | 🏪 Operasi |
+| **Transaksi** | Log history transaksi | 🏪 Operasi |
+| **Pendapatan** | Laporan laba/rugi 5-level (harian & bulanan) | 📊 Reports |
+| **Aset** | Daftar aset tetap & penyusutan | 📊 Reports |
+| **Audit** | Hidden log aktivitas (90-day retention) | 🔧 System |
 
 ## Menu `🧋 POS`
 
@@ -103,7 +103,7 @@ clasp open
 | 📦 Migrasi Stok (Awal → Masuk) | Migrasi ke sistem Stok Masuk kumulatif |
 | 🏷️ Refresh Named Ranges | Update ukuran named range |
 | 🌐 Set Environment… | Pilih production/staging/development |
-| ⚡ Install Auto-Fix Trigger | Pasang trigger onEdit |   
+| ⚡ Install Auto-Fix Trigger | Pasang trigger onEdit *(auto-installed saat setupPOS)* |   
 
 ## Teknologi
 
